@@ -1,0 +1,138 @@
+---
+description: Screen/页面规范：做一个 xxx 界面/页面时的结构、mock data、路由跳转/返回、页面级日志与 testbed（打开 screens/ui_mock/specs 时生效）
+globs: "{src/ui/screens/**,scenes/screens/**,data/ui_mock/**,docs/ui/specs/**,scenes/testbeds/**}"
+alwaysApply: false
+---
+
+# UI Screen Architecture
+
+## Screen 是完整页面
+
+每个完整界面应该是一个 Screen。
+
+示例：
+
+```text
+MainMenuScreen
+SettingsScreen
+RunSetupScreen
+StarMapMockScreen
+BattleMockScreen
+RewardMockScreen
+DeckPreviewMockScreen
+```
+
+## Screen 文件结构
+
+每个 Screen 推荐包含：
+
+```text
+scenes/screens/<screen_name>.tscn
+src/ui/screens/<screen_name>.gd
+docs/ui/specs/<screen_name>.md
+data/ui_mock/<screen_name>.json
+scenes/testbeds/<screen_name>_testbed.tscn
+docs/test_plans/<screen_name>_test.md
+```
+
+如果是纯占位页面，可以先省略部分文件，但必须有测试步骤。
+
+## Screen 推荐节点结构
+
+示例：
+
+```text
+BattleMockScreen
+  ├── BackgroundLayer
+  ├── SafeArea
+  │   ├── TopBar
+  │   ├── MainContent
+  │   │   ├── EnemyArea
+  │   │   ├── PlayerArea
+  │   │   └── HandArea
+  │   └── ActionBar
+  ├── PopupAnchor
+  └── DebugInfo
+```
+
+## Screen 脚本职责
+
+Screen 脚本负责：
+
+- 接收 mock data。
+- 初始化组件。
+- 响应按钮 signal。
+- 发出页面级 signal。
+- 请求 ScreenRouter 切换页面。
+- 记录页面进入/退出日志。
+
+Screen 脚本不负责：
+
+- 真实战斗计算。
+- 正式存档。
+- 敌人 AI。
+- 复杂卡牌效果。
+- 全局设置持久化细节。
+
+## Mock data
+
+第一阶段 Screen 使用 mock data。
+
+示例：
+
+```json
+{
+  "title": "未知星域",
+  "resources": {
+    "fuel": 12,
+    "credits": 80,
+    "hull": 42
+  },
+  "buttons": [
+    {
+      "id": "start",
+      "text": "开始探索"
+    }
+  ]
+}
+```
+
+## Navigation
+
+页面跳转统一通过 ScreenRouter。
+
+Screen 可以发 signal：
+
+```gdscript
+signal navigate_requested(screen_id: String, params: Dictionary)
+```
+
+由 AppRoot 或 ScreenRouter 处理。
+
+## Back 行为
+
+有返回按钮的页面必须定义返回目标。
+
+不要让返回按钮随意 `queue_free()` 当前页面。
+
+## Screen 日志
+
+Screen 必须记录：
+
+- screen_entered
+- screen_exited
+- mock_data_loaded
+- button_action
+- navigate_requested
+- layout_warning，如有
+
+## Screen 测试
+
+每个 Screen 完成后必须提供：
+
+1. testbed 或主路由进入方式。
+2. mock 数据。
+3. 新手人工测试步骤。
+4. 视觉 QA 检查点。
+5. 预期日志。
+

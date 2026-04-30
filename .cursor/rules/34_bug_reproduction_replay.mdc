@@ -1,0 +1,311 @@
+---
+description: Bug 复现与回放（Replay）：修 bug 要先拿到复现步骤/seed/flags/日志；重要问题沉淀 replay 与回归用例，避免随机与时序导致“复现不了”（打开 qa/replays/rng/gameplay 时生效）
+globs:
+  - "docs/qa/**"
+  - "logs/**"
+  - "tests/**"
+  - "src/gameplay/**"
+  - "src/core/rng/**"
+  - "src/core/logging/**"
+  - "data/replays/**"
+alwaysApply: false
+---
+
+# Bug Reproduction and Replay
+
+## 核心目标
+
+本规则用于确保 bug 可以被复现、分析和修复，尤其是：
+
+- 战斗 bug；
+- 随机数 bug；
+- 卡牌效果 bug；
+- 敌人行动 bug；
+- 奖励生成 bug；
+- 星图事件 bug；
+- 存档 / 读档 bug；
+- UI 与逻辑不同步 bug。
+
+对于卡牌 Roguelite，单靠“我点了一下就错了”很难定位问题。必须尽早建立 seed、command、event、state 的复现记录。
+
+---
+
+## 推荐目录
+
+```text
+docs/qa/bug_report_template.md
+docs/qa/known_repro_cases.md
+data/replays/
+tests/replays/
+logs/replays/
+```
+
+开发期也可以把临时 replay 存在：
+
+```text
+user://replays/dev/
+```
+
+但重要复现用例应整理到项目目录中。
+
+---
+
+## Bug 报告模板（AI 需要收集的信息）
+
+当用户报告 bug 时，AI 应尽量收集：
+
+```text
+1. 运行的是哪个场景？
+2. 是 F5 运行项目，还是 F6 运行当前场景？
+3. 操作步骤是什么？
+4. 预期结果是什么？
+5. 实际结果是什么？
+6. Godot Output 完整报错是什么？
+7. 是否开启 verbose log？
+8. 当前 run_seed / battle_seed 是什么？
+9. 当前启用了哪些 feature flags？
+10. 是否能稳定复现？
+11. 截图或录屏，如果有。
+12. replay 文件，如果有。
+```
+
+如果信息不足，AI 应先提出最小必要问题，不要盲目大改。
+
+---
+
+## Replay 数据应记录什么
+
+战斗或 run 相关 replay 应尽量记录：
+
+```text
+replay_version
+game_version
+godot_version
+created_at
+feature_flags
+data_versions
+run_seed
+battle_seed
+initial_state
+player_commands
+rng_calls 或 rng stream 标识
+battle_events
+final_state
+error_log
+checksum（如果有）
+```
+
+示例结构：
+
+```json
+{
+  "replay_version": 1,
+  "game_version": "dev",
+  "created_at": "YYYY-MM-DDTHH:MM:SS",
+  "feature_flags": { "combat.energy_v1": true },
+  "data_versions": { "cards": 1, "enemies": 1 },
+  "run_seed": 123456,
+  "battle_seed": 987654,
+  "initial_state": {},
+  "commands": [
+    { "turn": 1, "type": "play_card", "card_instance_id": "c001", "target_id": "enemy_001" },
+    { "turn": 1, "type": "end_turn" }
+  ],
+  "events": [],
+  "final_state": {},
+  "error": null
+}
+```
+
+---
+
+## Determinism 规则
+
+Replay 必须基于核心逻辑，而不是 UI 表现。
+
+正确：
+
+```text
+记录 BattleCommand
+记录 BattleEvent
+记录 seed
+记录初始状态
+```
+
+错误：
+
+```text
+记录鼠标坐标
+依赖动画播放完成时间
+依赖 UI 节点顺序
+依赖当前帧率
+```
+
+UI 可以用于展示 replay，但 replay 不应依赖 UI 才能运行。
+
+---
+
+## RNG 要求
+
+所有影响玩法的随机必须来自统一 RNG。
+
+Replay 必须记录：
+
+```text
+run_seed
+battle_seed
+随机流名称（如果有）
+当前启用的随机相关 feature flags
+```
+
+不允许在战斗、奖励、敌人行动中直接调用不可复现随机。
+
+---
+
+## 日志要求（定位 bug 的上下文）
+
+出现 bug 时，日志应尽量包含：
+
+```text
+bug_context
+scene_name
+active_screen
+run_seed
+battle_seed
+active_flags
+last_command
+last_event
+current_phase
+player_hp
+enemy_hp
+hand_ids
+draw_pile_ids
+discard_pile_ids
+error_stack
+```
+
+Verbose log 可以更详细，但 release 默认不应开启。
+
+---
+
+## 修 bug 时的流程
+
+AI 修复可复现 bug 时，应遵循：
+
+```text
+1. 明确复现步骤。
+2. 如果可能，创建 replay 或测试 fixture。
+3. 定位是数据问题、逻辑问题、UI 问题、RNG 问题还是存档问题。
+4. 最小范围修复。
+5. 添加回归测试或 replay case。
+6. 说明如何验证 bug 不再出现。
+```
+
+如果无法创建自动测试，也应提供手动复现步骤。
+
+---
+
+## Regression Replay（回归用例）
+
+重要 bug 修复后，应保存一个回归用例。
+
+推荐路径：
+
+```text
+tests/replays/bug_YYYYMMDD_short_name.json
+```
+
+文档记录：
+
+```text
+bug 描述
+原始复现步骤
+修复文件
+预期结果
+```
+
+这样以后 AI 改战斗系统时，可以重新跑这些 replay，避免老 bug 复发。
+
+---
+
+## Replay 版本
+
+Replay 格式必须带版本：
+
+```text
+replay_version
+```
+
+如果玩法和数据格式大改导致旧 replay 不能运行，应：
+
+```text
+标记 obsolete
+说明原因
+必要时保留原始文件
+不强行兼容所有开发期 replay
+```
+
+开发期 replay 可以失效，但必须知道为什么失效。
+
+---
+
+## 不允许的行为
+
+AI 不得：
+
+- 只根据猜测修 bug，不收集基础信息；
+- 删除报错代码但不修根因；
+- 为了让报错消失而吞掉异常；
+- 静默忽略非法 command；
+- 修改随机逻辑但不记录 seed 影响；
+- 修复战斗 bug 但不提供复现步骤；
+- 把 UI 动画当作战斗逻辑的一部分；
+- 说“已测试”但没有实际运行或给出测试步骤。
+
+---
+
+## 用户只贴报错时
+
+如果用户只贴了 Godot 报错，AI 应：
+
+```text
+1. 解释报错可能含义。
+2. 找到最可能相关文件。
+3. 请求最少必要补充信息。
+4. 如果足够明确，给出最小修复方案。
+5. 修复后要求用户重新运行同一场景。
+```
+
+不要立刻大范围重构。
+
+---
+
+## AI 完成 bug 修复后的输出
+
+修 bug 后必须输出：
+
+```text
+Bug:
+- 问题是什么
+- 根因是什么
+
+Fix:
+- 修改了什么
+- 为什么这样修
+
+Reproduction:
+- 原始复现步骤
+- 修复后验证步骤
+
+Replay / Test:
+- 是否新增 replay
+- 是否新增测试
+- 如果没有，为什么
+
+Rollback:
+- 如何撤销本次修复
+
+Risk:
+- 可能影响哪些系统
+```
+

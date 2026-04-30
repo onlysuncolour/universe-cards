@@ -1,0 +1,171 @@
+---
+description: 设计/做一个 xxx 界面（Web-first）：先出网页 UI 原型/设计稿（HTML/CSS），你确认后再还原成 Godot UI（Control 场景），并输出差异与视觉 QA（打开 web_ui 或 UI 文件时生效）
+globs: "{web_ui/**,src/ui/**,scenes/**,docs/ui/**}"
+alwaysApply: false
+---
+
+# Web-first UI Design and Godot Restoration
+
+## 核心原则
+
+视觉类 UI 默认先做网页设计稿，再做 Godot 还原。
+
+默认流程：
+
+```text
+1. 生成 HTML/CSS 静态 UI 原型。
+2. 用户用浏览器查看并反馈。
+3. AI 根据反馈修改网页原型。
+4. 用户确认。
+5. AI 分析网页结构和 CSS。
+6. AI 转换为 Godot Control 场景。
+7. AI 提供 Godot 视觉 QA。
+```
+
+除非用户明确说“直接做 Godot”，否则不要跳过网页原型阶段。
+
+## Web 原型位置
+
+每个网页原型放在：
+
+```text
+web_ui/prototypes/<screen_name>/
+  index.html
+  styles.css
+  mock_data.js 或 mock_data.json
+  README.md
+```
+
+共用 token：
+
+```text
+web_ui/shared/tokens.css
+```
+
+共用资源：
+
+```text
+web_ui/assets/
+```
+
+## Web 原型要求
+
+默认使用：
+
+- HTML
+- CSS
+- 少量原生 JS
+
+不要默认引入：
+
+- React
+- Vue
+- Svelte
+- Vite
+- Tailwind
+- Bootstrap
+- npm 构建流程
+
+除非用户明确批准。
+
+原因：用户可以直接双击 `index.html` 审核。
+
+## Web 原型必须包含
+
+- 基准分辨率说明。
+- 页面结构。
+- 使用的 token。
+- mock 数据。
+- hover/active/disabled 状态，如果适用。
+- 简单 README，告诉用户如何打开。
+
+README 示例：
+
+```text
+打开方式：
+双击 index.html 即可在浏览器查看。
+推荐用 Chrome/Edge。
+设计基准：1920x1080。
+```
+
+## 用户确认前禁止
+
+在用户确认网页设计稿前，不要把视觉页面完整实现到 Godot，除非任务明确要求。
+
+允许先做：
+
+- Godot 空壳页面
+- 路由占位
+- mock data
+- 组件基础版本
+
+## 从 Web 转 Godot 的流程
+
+AI 必须先输出转换分析：
+
+```text
+1. 页面区域拆解。
+2. DOM 结构。
+3. CSS 布局方式。
+4. Godot 节点映射。
+5. 需要复用的组件。
+6. 需要新增的组件。
+7. CSS 效果在 Godot 中的实现方式。
+8. 无法 1:1 还原的地方和替代方案。
+```
+
+## 常见映射
+
+```text
+HTML section/div       -> Control / PanelContainer / MarginContainer
+CSS flex row           -> HBoxContainer
+CSS flex column        -> VBoxContainer
+CSS grid               -> GridContainer
+CSS padding            -> MarginContainer
+CSS gap                -> theme separation / custom constants
+CSS border-radius      -> StyleBoxFlat corner radius
+CSS border             -> StyleBoxFlat border
+CSS background         -> Panel / TextureRect / ColorRect
+CSS box-shadow/glow    -> StyleBox/Shader/额外发光节点近似
+CSS transition         -> Tween / AnimationPlayer
+CSS hover              -> mouse_entered / mouse_exited / theme state
+CSS absolute decor     -> Control with anchors / TextureRect
+```
+
+## 前端代码作为设计稿
+
+如果用户提供前端页面代码，AI 必须：
+
+1. 阅读 HTML 结构。
+2. 阅读 CSS token。
+3. 提取布局区域。
+4. 提取组件。
+5. 提取颜色、字号、间距。
+6. 输出 Godot 节点树设计。
+7. 再实现 Godot 场景。
+
+不要直接凭感觉重做。
+
+## 还原目标
+
+目标不是像素级完全一致，而是：
+
+```text
+1920x1080 下视觉接近设计稿；
+其他常见分辨率不崩；
+交互清晰；
+可继续扩展；
+符合 Godot UI 结构。
+```
+
+## Godot 还原完成后
+
+必须输出：
+
+- Web 原型路径。
+- Godot 场景路径。
+- 对应组件列表。
+- 还原差异说明。
+- 人工对照检查清单。
+- 预期日志。
+

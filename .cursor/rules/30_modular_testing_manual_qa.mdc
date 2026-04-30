@@ -1,0 +1,150 @@
+---
+description: 测试/验收规则：每个模块都要可单独测试；如何写 testbed、mock data、手动测试步骤与轻量自动测试（打开 tests/testbeds/test_plans 时生效）
+globs: "{scenes/testbeds/**,tests/**,docs/test_plans/**,data/ui_mock/**}"
+alwaysApply: false
+---
+
+# Modular Testing and Manual QA
+
+## 核心要求
+
+每个模块都必须可以单独测试。
+
+模块包括：
+
+- Autoload Service
+- UI Component
+- Screen
+- Mock Data Adapter
+- Theme / Style
+- Logging Utility
+- Data Loader
+- Popup
+- Scene Transition
+
+## 测试层级
+
+本项目第一阶段使用三类测试：
+
+```text
+1. 人工测试步骤
+2. Godot testbed 场景
+3. 轻量自动测试脚本
+```
+
+不默认引入第三方测试插件。若需要插件，必须用户确认。
+
+## 人工测试
+
+每个任务完成后必须提供人工测试步骤。
+
+用户是 Godot 新手，所以步骤必须明确：
+
+- 打开哪个文件。
+- 按 F5 还是 F6。
+- 应该看到什么。
+- 应该点击什么。
+- Output 应该出现什么日志。
+- 失败时给 AI 什么信息。
+
+## Testbed 场景
+
+UI 组件和 Screen 必须优先提供 testbed。
+
+命名：
+
+```text
+scenes/testbeds/<module_name>_testbed.tscn
+```
+
+testbed 应该：
+
+- 不依赖完整游戏流程。
+- 可以直接 F6 运行。
+- 使用 mock data。
+- 显示关键状态。
+- 输出日志。
+- 方便用户截图反馈。
+
+## Mock Data
+
+第一阶段优先使用：
+
+```text
+data/ui_mock/
+```
+
+mock data 应：
+
+- 字段清楚。
+- 不混入真实复杂玩法。
+- 可被 testbed 直接加载。
+- 出错时有 fallback。
+
+## 自动测试
+
+对于非 UI 纯逻辑模块，应尽量提供轻量自动测试。
+
+推荐位置：
+
+```text
+tests/unit/
+tests/integration/
+tests/runners/
+```
+
+如果实现 test runner，优先支持命令行：
+
+```text
+godot --headless --path . -s res://tests/runners/test_runner.gd
+```
+
+如果用户不会命令行，仍必须提供 Godot 内运行方式或 testbed。
+
+## Service 测试
+
+Service 应提供：
+
+```gdscript
+reset_for_tests()
+```
+
+测试时应记录：
+
+- 初始状态
+- 输入
+- 输出
+- 状态变化
+- 错误
+
+## 日志和测试结合
+
+每个测试应尽量调用：
+
+```gdscript
+DebugService.begin_test_session("module_name")
+DebugService.end_test_session()
+```
+
+测试日志必须能够帮助判断模块行为。
+
+## Definition of Done
+
+一个模块完成必须满足：
+
+1. 可以独立运行或独立调用。
+2. 有 mock data 或明确输入。
+3. 有人工测试步骤。
+4. 有必要日志。
+5. 失败时有可诊断信息。
+6. 不依赖真实玩法系统。
+7. 不需要用户理解复杂 Godot 内部机制。
+
+## Bug 回归
+
+修复 bug 后：
+
+- 如果是 UI bug，更新 testbed 或 QA 清单。
+- 如果是逻辑 bug，添加自动测试或测试脚本。
+- 如果是配置问题，更新人工测试步骤。
+

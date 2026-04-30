@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "release_mode": false,
+  "notes": "开发期配置。release_mode=true 时必须确保 prototype flags 不会被启用。"
+}
+

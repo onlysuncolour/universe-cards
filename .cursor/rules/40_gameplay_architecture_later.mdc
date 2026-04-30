@@ -1,0 +1,102 @@
+---
+description: 【全局】阶段边界：第一阶段只做 UI/基建/Mock，不写真实玩法；UI 与玩法职责分离（始终生效）
+alwaysApply: true
+---
+
+# Gameplay Architecture Later
+
+## 当前阶段
+
+当前阶段重点不是玩法，而是：
+
+```text
+Godot 工程基础
+UI 设计系统
+网页 UI 原型
+Godot UI 还原
+日志系统
+模块测试能力
+```
+
+因此，除非用户明确要求，不要实现完整玩法系统。
+
+## 第一阶段允许
+
+允许实现：
+
+- mock 手牌
+- mock 卡牌展示
+- mock 敌人
+- mock 资源栏
+- mock 战斗界面
+- mock 星图
+- mock 奖励
+- mock 事件选择
+- 假按钮跳转
+- 假数据刷新
+
+## 第一阶段禁止
+
+禁止在 UI 中硬编码真实玩法：
+
+- 不要在卡牌 UI 里直接扣敌人血。
+- 不要在按钮里写完整战斗结算。
+- 不要把抽牌/弃牌/能量系统写死在 Screen。
+- 不要把敌人 AI 写在敌人 UI 组件里。
+- 不要提前设计不可变更的正式存档结构。
+
+## 未来玩法接口预留
+
+可以预留轻量接口，例如：
+
+```gdscript
+func refresh_view(data: Dictionary) -> void:
+    pass
+```
+
+或 mock adapter：
+
+```gdscript
+func get_battle_mock_data() -> Dictionary:
+    pass
+```
+
+但不要提前做复杂抽象。
+
+## 后续第二阶段方向
+
+第二阶段再展开：
+
+- CardDef
+- CardInstance
+- BattleContext
+- ActionQueue
+- EnemyIntent
+- StatusEffect
+- RewardSystem
+- RunState
+- Save Migration
+
+这些不属于第一阶段核心任务。
+
+## UI 和玩法边界
+
+UI 只做：
+
+- 显示
+- 输入
+- 动画
+- signal
+- mock 数据展示
+
+玩法做：
+
+- 规则
+- 计算
+- 状态变更
+- 随机
+- 奖励
+- 存档
+
+第一阶段 UI 必须保持未来可接入真实玩法。
+

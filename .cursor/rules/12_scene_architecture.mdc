@@ -1,0 +1,146 @@
+---
+description: 场景/页面路由架构：AppRoot 分层、ScreenRouter 导航、Screen/组件/testbed 的组织方式（打开 .tscn/.gd/project.godot 时生效）
+globs: "{scenes/**/*.tscn,src/**/*.gd,project.godot}"
+alwaysApply: false
+---
+
+# Scene Architecture
+
+## 启动结构
+
+推荐主启动场景：
+
+```text
+scenes/app/app_root.tscn
+```
+
+推荐场景树：
+
+```text
+AppRoot
+  ├── BackgroundLayer
+  ├── ScreenLayer
+  ├── PopupLayer
+  ├── TransitionLayer
+  └── DebugLayer
+```
+
+职责：
+
+- `BackgroundLayer`：全局背景、深空背景、装饰。
+- `ScreenLayer`：当前页面。
+- `PopupLayer`：弹窗、确认框。
+- `TransitionLayer`：页面切换过渡。
+- `DebugLayer`：FPS、日志开关、调试信息。
+
+## Screen 页面
+
+每个完整界面都是一个 Screen。
+
+示例：
+
+```text
+scenes/screens/main_menu_screen.tscn
+src/ui/screens/main_menu_screen.gd
+```
+
+Screen 根节点推荐继承：
+
+```gdscript
+extends Control
+```
+
+Screen 推荐支持这些方法：
+
+```gdscript
+func enter_screen(params: Dictionary = {}) -> void:
+    pass
+
+func exit_screen() -> void:
+    pass
+
+func refresh_view(data: Dictionary = {}) -> void:
+    pass
+```
+
+如果当前阶段不需要完整生命周期，也应保持结构上可扩展。
+
+## 页面切换
+
+页面切换统一由 `ScreenRouter` 管理。
+
+禁止：
+
+- Screen A 直接 `get_node()` 找 Screen B。
+- Screen A 直接实例化另一个完整页面。
+- 子组件直接修改全局页面状态。
+
+允许：
+
+- Screen 发出 signal。
+- AppRoot 或 ScreenRouter 接收 signal 后切换页面。
+- 使用 mock 参数进入页面。
+
+## Popup
+
+弹窗统一走 PopupLayer 或 PopupManager。
+
+禁止每个页面自己随意创建全屏弹窗层。
+
+## UI 组件
+
+UI 组件应是独立场景。
+
+示例：
+
+```text
+scenes/components/sci_fi_button.tscn
+src/ui/components/sci_fi_button.gd
+scenes/testbeds/sci_fi_button_testbed.tscn
+```
+
+组件不应该知道自己属于哪个 Screen。
+
+## Testbed 场景
+
+每个重要模块都应有独立测试入口。
+
+### UI 组件 testbed
+
+用于测试：
+
+- normal
+- hover
+- pressed
+- disabled
+- selected
+- 不同文本长度
+- 不同图标
+- 不同尺寸
+
+### Screen testbed
+
+用于测试：
+
+- mock 数据加载
+- 页面布局
+- 按钮点击
+- 返回按钮
+- 弹窗
+- 日志输出
+
+testbed 命名：
+
+```text
+scenes/testbeds/<module_name>_testbed.tscn
+```
+
+## 场景设计原则
+
+- 根节点命名清楚。
+- 关键节点使用唯一名称，便于 `%NodeName` 引用。
+- 布局优先使用 Container。
+- 不要用大量绝对坐标搭 UI。
+- 装饰性元素可以绝对定位。
+- 关键交互元素必须可响应分辨率变化。
+

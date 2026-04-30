@@ -1,0 +1,256 @@
+---
+description: AI 美术素材/图片资源流程：写素材 prompt、生成 asset_id、维护 Prompt Spec 与 asset_manifest、风格版本与版权安全（打开 docs/art、assets、data/assets 时生效）
+globs: "{docs/art/**,data/assets/**,assets/**}"
+alwaysApply: false
+---
+
+# AI Asset Prompt Management（AI 美术素材 Prompt 管理）
+
+本规则用于把“AI 生成素材”从聊天记录里收拢成**可追溯、可回溯、可批量重生成**的一套资产管线。
+
+## 适用范围（本规则管什么）
+
+当用户说类似这些需求时，优先应用本规则：
+
+- “做/生成一个飞船素材/卡牌插画/背景/UI 图标”
+- “帮我写一份素材 prompt”
+- “统一一下素材风格 / 重做一批素材”
+- “把这张图导入 Godot / 放进 assets”
+- “补一个素材清单 / manifest”
+
+## Source of Truth（真相来源）
+
+AI 美术素材管理的核心文件/目录：
+
+```text
+docs/art/style_bible.md
+docs/art/prompt_library/
+docs/art/asset_specs/
+docs/art/generation_batches/
+docs/art/prompt_template.md
+
+data/assets/asset_manifest.json
+
+assets/source/ai_generated/
+assets/
+```
+
+原则：**不要把关键 prompt 只留在聊天记录里。**
+
+## Prompt 分层（不要每次从零发明）
+
+每个具体素材的 prompt 必须由以下层级组合：
+
+```text
+全局美术风格 prompt（style_bible / global style）
++ 类别 prompt（category prompts）
++ 具体素材描述（asset brief）
++ 技术约束（视角/透明背景/比例/尺寸等）
++ negative prompt
+```
+
+## 风格版本（style_version）
+
+- 全局风格必须有版本号，例如 `art_style_v0.1`、`art_style_v0.2`。
+- 每个素材 Prompt Spec 必须记录自己基于哪个 `style_version`。
+- 全局风格大改后：
+  - 不强制立即重做所有旧素材；
+  - 新素材使用新版本；
+  - 旧素材如需统一，创建 batch 再重生成。
+
+## asset_id 规则（每个素材必须有 ID）
+
+命名规则：
+
+```text
+<type>_<theme>_<name>_<variant>
+```
+
+示例：
+
+```text
+ship_player_survey_corvette
+ship_enemy_raider_drone
+module_shield_generator_mk1
+card_art_plasma_shot
+card_frame_basic_cyan_v1
+icon_energy
+bg_deep_space_nebula_01
+```
+
+要求：
+
+- 小写 + 下划线
+- 语义清晰、可扩展（后续可加 variant）
+
+## Prompt Spec（每个 AI 素材必须有单独文档）
+
+每个具体素材必须有一个 Prompt Spec 文档：
+
+```text
+docs/art/asset_specs/<category>/<asset_id>.md
+```
+
+该文档至少记录：
+
+- asset_id / asset_type / 用途
+- 状态（见下方）
+- style_version / prompt_version
+- 英文正向 prompt（可复制）
+- negative prompt
+- 生成工具、比例/尺寸、是否透明背景、seed（如有）
+- 候选图路径、选中图路径
+- Godot 导入路径（最终放到 `assets/` 下的路径）
+- 修改历史
+
+## 素材状态（status 枚举）
+
+素材状态必须使用以下之一：
+
+```text
+idea
+prompt_draft
+prompt_approved
+generated_candidates
+selected
+approved
+imported
+deprecated
+```
+
+## AI 在“写素材 prompt”时必须输出的内容
+
+当用户要求你“生成素材 prompt / 生成 prompt spec”时，输出必须包含：
+
+1. asset_id 建议（或确认用户给定的 asset_id）
+2. asset_type
+3. style_version
+4. 可直接复制到生成工具的**英文 prompt**
+5. 中文解释（给人看的）
+6. negative prompt
+7. 推荐尺寸与比例
+8. 是否需要透明背景（true/false）
+9. 2–4 个 prompt 变体（如适用）
+10. Prompt Spec 应写入的文件路径建议
+11. 如素材状态进入 `selected/approved/imported`，提示更新 manifest（见下方）
+
+## 版权与风格安全（必须遵守）
+
+禁止在 prompt 中直接要求：
+
+- 复制某个商业游戏/电影/动漫的具体设计
+- 使用在世艺术家名字作为风格
+- 生成真实商标/Logo/水印/签名
+- 复刻参考游戏截图
+
+允许使用“描述性风格”，例如：
+
+```text
+semi-realistic 2D sci-fi game art
+hard-surface spaceship design
+cold cyan emissive lights
+dark gunmetal panels
+deep space atmosphere
+```
+
+## 类别约束（常见素材类型的硬要求）
+
+### 飞船（ships）
+
+- 推荐视角：3/4 top-down orthographic 或 side view
+- 透明背景（如作为独立素材）
+- 小尺寸轮廓可读
+- 禁止文字/Logo/水印
+
+### 飞船模块（ship_modules）
+
+- 明确模块功能（护盾/引擎/武器/反应堆/医疗等）
+- 若作为 UI 图标：必须小尺寸清晰、高对比、透明背景优先
+
+### 卡牌插画（card_art）
+
+- 推荐比例：2:3 或 3:4
+- **禁止**把卡牌标题/费用/说明文字画进图片
+- 给裁切留余量，主体清晰
+
+### 卡牌框（card_frame）
+
+- card_frame 与 card_art 必须分离
+- 是 UI frame，不是插画
+- 可包含标题区/费用槽/说明区的“空位结构”，但**不包含具体文字**
+
+### UI 图标（icons）
+
+- 简洁、高对比、小尺寸可读（32px/64px）
+- 透明背景优先
+- 避免复杂背景
+
+### 背景（backgrounds）
+
+- 适合 UI 叠加：不要过亮、不要高频干扰
+- 说明用途：主菜单/星图/战斗/事件
+- 不要文字/水印
+
+## Card 素材拆分规则（必须）
+
+卡牌相关素材必须区分并命名：
+
+```text
+card_art_xxx       纯插画
+card_frame_xxx     卡牌框（UI）
+card_icon_xxx      小图标
+card_mock_xxx      临时占位
+```
+
+**禁止**把卡牌文字“烘焙”进 `card_art`。
+
+## asset_manifest（素材清单必须可追踪）
+
+当素材进入 `selected`、`approved` 或 `imported` 状态时，应更新：
+
+```text
+data/assets/asset_manifest.json
+```
+
+manifest 至少记录（字段名可按项目调整，但语义必须等价）：
+
+```json
+{
+  "asset_id": "card_art_plasma_shot",
+  "asset_type": "card_art",
+  "status": "approved",
+  "style_version": "art_style_v0.1",
+  "prompt_doc": "docs/art/asset_specs/cards/card_art_plasma_shot.md",
+  "source_files": [],
+  "imported_files": []
+}
+```
+
+## 导入 Godot 前检查清单（避免把脏素材放进 assets）
+
+导入前必须确认：
+
+- 用户已选择/批准素材（至少到 `selected/approved`）
+- prompt 与来源记录完整（Prompt Spec 存在）
+- 文件命名规范
+- 尺寸合理、比例匹配用途
+- 无文字/水印/Logo
+- 需要透明背景的素材确实透明
+- 卡牌插画未烘焙 UI 文字
+
+## 批量生成（batch）
+
+批量素材应记录在：
+
+```text
+docs/art/generation_batches/
+```
+
+批次文档应记录：
+
+- 批次目标
+- 涉及的 asset_id 列表
+- style_version
+- 每个素材的 Prompt Spec 路径
+- 当前状态与用户选择结果
+

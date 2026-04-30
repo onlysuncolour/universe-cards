@@ -1,0 +1,198 @@
+---
+description: UI 设计系统/风格统一：颜色/字体/间距等 token、主题与组件一致性；做任何界面/UI 时必须遵守（打开 UI/web_ui/docs/ui 时生效）
+globs: "{src/ui/**,scenes/**,assets/ui/**,docs/ui/**,web_ui/**}"
+alwaysApply: false
+---
+
+# UI Design System
+
+## 核心原则
+
+UI 必须有统一设计系统。
+
+AI 不得每做一个页面就重新发明：
+
+- 颜色
+- 字体
+- 按钮风格
+- 面板风格
+- 间距
+- 阴影
+- 圆角
+- 发光效果
+
+新增视觉风格必须沉淀为 token 或组件。
+
+## 设计系统文件
+
+建议维护：
+
+```text
+docs/ui/design_tokens.md
+web_ui/shared/tokens.css
+src/ui/theme/
+assets/ui/
+```
+
+Godot 主题可以放：
+
+```text
+assets/ui/main_theme.tres
+```
+
+或按项目实际情况放在：
+
+```text
+src/ui/theme/
+```
+
+## 颜色 Token
+
+推荐使用语义命名，不要直接到处写色值。
+
+示例：
+
+```text
+color_bg_deep_space
+color_bg_space_gradient_top
+color_bg_space_gradient_bottom
+
+color_panel_dark
+color_panel_mid
+color_panel_light
+color_panel_glass
+
+color_border_dim
+color_border_blue
+color_border_cyan
+
+color_accent_blue
+color_accent_cyan
+color_accent_purple
+
+color_warning_orange
+color_danger_red
+color_success_green
+
+color_text_primary
+color_text_secondary
+color_text_muted
+color_text_disabled
+```
+
+## 字体 Token
+
+中文项目必须优先保证可读性。
+
+推荐：
+
+```text
+font_title
+font_subtitle
+font_body
+font_body_bold
+font_number
+font_mono
+```
+
+可选字体：
+
+- Noto Sans SC
+- 思源黑体
+- 其他确认可商用字体
+
+如果字体文件不存在，必须 fallback 到 Godot 默认字体，并记录 warning。
+
+## 字号 Token
+
+推荐：
+
+```text
+font_size_xs = 14
+font_size_sm = 16
+font_size_md = 20
+font_size_lg = 28
+font_size_xl = 40
+font_size_display = 64
+```
+
+可根据实际视觉调整，但应统一。
+
+## 间距 Token
+
+推荐：
+
+```text
+space_4
+space_8
+space_12
+space_16
+space_24
+space_32
+space_48
+space_64
+```
+
+## 圆角和描边
+
+推荐：
+
+```text
+radius_sm
+radius_md
+radius_lg
+border_width_thin
+border_width_normal
+```
+
+## 常见组件状态
+
+组件必须考虑：
+
+- normal
+- hover
+- pressed
+- disabled
+- selected
+- focused
+
+## 科幻 UI 特征
+
+可以使用：
+
+- 半透明深色面板
+- 细线边框
+- 青蓝色发光
+- 角标装饰
+- 扫描线
+- 星点背景
+- 终端式网格
+- 轻微噪声纹理
+
+但不要影响文字可读性。
+
+## Web 和 Godot 一致性
+
+Web 原型中的 CSS variables 应尽量与 Godot token 对应。
+
+示例：
+
+```css
+:root {
+  --color-bg-deep-space: #050914;
+  --color-accent-cyan: #4de8ff;
+  --space-16: 16px;
+}
+```
+
+Godot 实现时应使用相同语义 token，而不是重新挑颜色。
+
+## 新增 UI 的要求
+
+每次新增 UI，AI 必须说明：
+
+- 使用了哪些 token。
+- 是否新增 token。
+- 是否复用了已有组件。
+- 是否需要更新设计系统文档。
+

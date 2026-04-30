@@ -1,0 +1,139 @@
+---
+description: UI 布局/自适应规则：做页面布局、适配分辨率、Container/Anchor 使用与常见踩坑检查（打开 UI/web_ui/docs/ui 时生效）
+globs: "{src/ui/**,scenes/**,docs/ui/**,web_ui/**}"
+alwaysApply: false
+---
+
+# UI Layout and Responsive Rules
+
+## 基准分辨率
+
+第一阶段 UI 设计基准：
+
+```text
+1920 x 1080
+```
+
+必须至少考虑：
+
+```text
+1366 x 768
+1600 x 900
+1920 x 1080
+2560 x 1440
+```
+
+## Godot 布局原则
+
+关键 UI 优先使用：
+
+- Control
+- MarginContainer
+- VBoxContainer
+- HBoxContainer
+- GridContainer
+- PanelContainer
+- ScrollContainer
+- TextureRect
+- Label
+- Button
+
+不要大量使用绝对坐标。
+
+允许绝对定位：
+
+- 背景星点
+- 装饰线
+- 角标
+- 氛围光
+- 非关键装饰元素
+
+不允许关键交互元素只靠绝对坐标固定。
+
+## Anchor 和 Container
+
+AI 创建 UI 时必须关注：
+
+- anchors
+- offsets
+- size flags
+- custom minimum size
+- container separation
+- stretch mode
+- expand / fill
+
+如果使用绝对定位，必须说明原因。
+
+## Safe Area
+
+所有页面应有主内容安全边距。
+
+推荐：
+
+```text
+外边距 48px，低分辨率可降到 24px。
+```
+
+不要把按钮贴在屏幕边缘。
+
+## 文本适配
+
+中文 UI 必须考虑：
+
+- 文本过长
+- 自动换行
+- 省略号
+- 行高
+- 字号
+- 按钮文字不被裁切
+- Label 的 autowrap
+
+如果文本可能很长，优先使用：
+
+- ScrollContainer
+- RichTextLabel
+- 自动换行 Label
+
+## Web 原型布局
+
+Web 原型可使用：
+
+- flex
+- grid
+- CSS variables
+- media queries
+
+但必须能转换到 Godot。
+
+Web 到 Godot 的常见映射：
+
+```text
+display: flex row     -> HBoxContainer
+display: flex column  -> VBoxContainer
+gap                   -> separation / margin
+padding               -> MarginContainer
+grid                  -> GridContainer
+position absolute     -> Control anchors / offsets
+overflow auto         -> ScrollContainer
+```
+
+## 布局测试
+
+AI 完成 UI 后必须提供不同分辨率测试清单：
+
+```text
+1. 1920x1080 检查是否接近设计稿。
+2. 1366x768 检查是否溢出。
+3. 2560x1440 检查是否过度拉伸。
+4. 检查中文文本是否截断。
+5. 检查按钮是否仍可点击。
+6. 检查弹窗是否居中。
+```
+
+## 禁止
+
+- 不要把全部 UI 做成一张背景图。
+- 不要为了还原效果牺牲可读性。
+- 不要让重要按钮在小分辨率下跑出屏幕。
+- 不要用魔法数字堆满整个页面。
+

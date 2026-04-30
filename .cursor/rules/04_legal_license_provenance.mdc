@@ -1,0 +1,319 @@
+---
+description: 【全局】授权/来源/合规：第三方素材、字体、音频、插件、AI 生成图片/音频与 prompt 的来源记录与风险提示（始终生效）
+alwaysApply: true
+---
+
+# Legal, License, and Provenance
+
+## 核心目标
+
+本规则用于确保项目中的：
+
+- AI 生成图片；
+- AI 生成音频；
+- 字体；
+- 第三方素材；
+- 插件；
+- 代码依赖；
+- 参考图；
+- prompt；
+
+都有清晰来源、授权状态和使用限制。
+
+AI 不提供法律意见，但必须帮助用户记录风险，避免明显侵权和来源不明素材进入项目。
+
+---
+
+## Source of Truth
+
+法律、授权和来源记录应集中在：
+
+```text
+docs/legal/asset_licenses.md
+docs/legal/ai_generation_policy.md
+docs/legal/third_party_dependencies.md
+data/assets/asset_manifest.json
+docs/art/asset_specs/
+docs/audio/asset_specs/
+```
+
+如果这些文件不存在，AI 在添加相关素材或依赖时应建议创建。
+
+---
+
+## 禁止行为
+
+AI 不得建议或生成以下内容：
+
+```text
+直接复制某个商业游戏、电影、动漫、小说、漫画、桌游、卡牌游戏的具体设计
+直接要求“做得和某某游戏一样”
+直接使用在世艺术家的名字作为风格关键词
+直接使用商业 IP 的角色、飞船、logo、阵营标志
+生成真实品牌 logo、商标、水印
+生成仿冒 UI、仿冒卡牌框、仿冒知名游戏图标
+使用来源不明且不允许商用的图片、字体、音效、音乐
+移除水印或规避授权限制
+```
+
+当用户提出风险较高的要求时，AI 应改写为安全的描述性 prompt。
+
+错误示例：
+
+```text
+做一个像《某知名科幻 IP》里的战舰
+```
+
+正确改写：
+
+```text
+做一个原创的硬表面科幻战舰，深色金属装甲，模块化结构，青蓝色引擎光，3/4 俯视角，轮廓清晰。
+```
+
+---
+
+## AI 生成素材必须记录的信息
+
+每一个 AI 生成素材都必须尽量记录：
+
+```text
+asset_id
+asset_type
+用途
+生成工具
+模型名称
+模型版本，如果可得
+生成日期
+prompt 文档路径
+positive prompt
+negative prompt
+seed，如果有
+参考图来源，如果有
+候选图路径
+选中图路径
+Godot 导入路径
+授权状态
+是否允许商用
+备注
+```
+
+推荐写入：
+
+```text
+docs/art/asset_specs/<category>/<asset_id>.md
+data/assets/asset_manifest.json
+```
+
+音频素材写入：
+
+```text
+docs/audio/asset_specs/<category>/<asset_id>.md
+```
+
+---
+
+## 第三方素材规则
+
+任何第三方素材进入项目前，必须记录：
+
+```text
+名称
+来源 URL
+作者
+许可证
+是否允许商用
+是否允许修改
+是否需要署名
+下载日期
+本地路径
+备注
+```
+
+如果许可证不明确：
+
+```text
+不得作为正式素材使用。
+只能作为临时占位素材。
+必须标记为 placeholder 或 unlicensed_reference。
+```
+
+未经确认的素材不得进入：
+
+```text
+assets/
+export/
+release/
+```
+
+可以临时放入：
+
+```text
+assets/temp/
+assets/placeholders/
+```
+
+但必须有清晰标记。
+
+---
+
+## 字体规则
+
+新增字体前必须确认：
+
+```text
+字体名称
+来源
+许可证
+是否允许商用
+是否允许嵌入游戏
+是否需要署名
+支持字符范围，尤其是中文
+```
+
+禁止使用来源不明字体。
+
+如果只是开发期占位字体，必须标记：
+
+```text
+placeholder_font
+not_for_release
+```
+
+---
+
+## 音频规则
+
+新增音乐、音效、环境音前必须记录：
+
+```text
+audio_id
+来源或生成工具
+许可证
+是否允许商用
+是否可循环
+推荐音量
+是否需要署名
+原始文件路径
+Godot 导入路径
+```
+
+AI 生成音频也要记录 prompt 和工具。
+
+禁止直接使用来源不明的音频。
+
+---
+
+## 插件和第三方代码规则
+
+引入 Godot 插件、第三方库、脚本前必须说明：
+
+```text
+用途
+来源
+许可证
+版本
+维护状态
+是否有替代方案
+是否必须引入
+移除成本
+```
+
+AI 不得因为方便就随意引入插件。
+
+默认策略：
+
+```text
+能不用插件就不用插件。
+必须引入时先说明风险和收益。
+```
+
+---
+
+## Prompt 安全规则
+
+AI 生成图片或音频 prompt 时，应使用描述性风格词，而不是侵权性引用。
+
+允许：
+
+```text
+semi-realistic 2D sci-fi game art
+hard-surface spaceship design
+dark gunmetal hull
+cyan emissive light
+holographic terminal UI
+deep-space atmosphere
+```
+
+禁止：
+
+```text
+in the style of <living artist>
+same as <specific commercial game>
+copy <specific IP ship>
+using <real brand logo>
+```
+
+如果用户要求“像某某作品”，AI 应提取抽象设计目标：
+
+```text
+暗色科幻
+硬表面结构
+可读性强
+冷色发光
+模块化舰体
+终端式 UI
+```
+
+然后生成原创描述。
+
+---
+
+## Release 前检查
+
+发布前必须确认：
+
+```text
+没有来源不明素材
+没有未授权字体
+没有未授权音效或音乐
+没有水印
+没有真实商标
+没有商业 IP 标志
+没有直接仿制知名游戏 UI
+asset_manifest 状态清晰
+third_party_dependencies 文档完整
+```
+
+如果发现风险素材，应标记：
+
+```text
+blocked_for_release
+```
+
+或替换为合法素材。
+
+---
+
+## AI 回答要求
+
+当用户要求添加素材、字体、音频、插件时，AI 必须输出：
+
+```text
+Provenance:
+- 来源
+- 授权状态
+- 是否可商用
+- 是否需要记录到 manifest
+
+Risk:
+- 是否有版权风险
+- 是否是占位资源
+- 是否可用于正式发布
+```
+
+如果信息不足，AI 必须明确写：
+
+```text
+授权状态未知，不能作为正式素材使用。
+```
+

@@ -1,0 +1,154 @@
+---
+description: UI 组件规范：做按钮/面板等可复用组件，如何设计 API/signal、如何配 testbed、交互要打日志（打开 components/testbeds 时生效）
+globs: "{src/ui/components/**,scenes/components/**,scenes/testbeds/**}"
+alwaysApply: false
+---
+
+# UI Component Library
+
+## 核心原则
+
+页面应该由组件组合而成。
+
+不要每个页面单独写一套按钮、面板、标题栏、资源栏。
+
+## 第一阶段推荐组件
+
+```text
+SciFiButton
+IconButton
+PrimaryButton
+SecondaryButton
+DangerButton
+
+SciFiPanel
+GlassPanel
+TerminalPanel
+
+ScreenTitleBar
+TopResourceBar
+BackButton
+
+ModalDialog
+ConfirmDialog
+ToastMessage
+TooltipPanel
+
+CardViewMock
+CardPileViewMock
+DeckPreviewItemMock
+
+TabButton
+ScrollList
+ChoiceButton
+ProgressBarSciFi
+StatusBadge
+
+DebugLogView
+DebugToggleRow
+```
+
+可以按需实现，不必一次全部做完。
+
+## 组件文件结构
+
+示例：
+
+```text
+scenes/components/sci_fi_button.tscn
+src/ui/components/sci_fi_button.gd
+scenes/testbeds/sci_fi_button_testbed.tscn
+docs/test_plans/sci_fi_button_test.md
+```
+
+## 组件 API
+
+组件应提供清晰方法，例如：
+
+```gdscript
+func setup(data: Dictionary) -> void:
+    pass
+
+func set_disabled(value: bool) -> void:
+    pass
+
+func set_selected(value: bool) -> void:
+    pass
+```
+
+组件 signal 示例：
+
+```gdscript
+signal pressed(action_id: String)
+signal hovered(action_id: String)
+signal state_changed(state: String)
+```
+
+## 组件数据
+
+组件可以接受 Dictionary，但字段必须清楚。
+
+示例：
+
+```gdscript
+{
+  "id": "start_game",
+  "text": "开始探索",
+  "icon": "res://assets/icons/icon_start.svg",
+  "disabled": false
+}
+```
+
+## 组件禁止事项
+
+组件不应该：
+
+- 直接切换完整页面。
+- 直接读写 SaveService。
+- 直接实现玩法逻辑。
+- 直接知道自己属于哪个 Screen。
+- 硬编码大量页面专属文本。
+- 使用与设计系统冲突的颜色。
+
+## 组件状态
+
+组件必须至少考虑：
+
+- normal
+- hover
+- pressed
+- disabled
+
+视情况考虑：
+
+- selected
+- focused
+- warning
+- danger
+
+## 组件 testbed
+
+每个重要组件必须有 testbed。
+
+testbed 应展示：
+
+- 默认状态。
+- hover/pressed 可交互状态。
+- disabled 状态。
+- 长文本。
+- 缺失 icon。
+- 不同尺寸。
+
+## 组件日志
+
+组件关键交互应记录日志：
+
+```gdscript
+DebugService.info("component", "button_pressed", {
+    "component": "SciFiButton",
+    "action_id": action_id
+})
+```
+
+verbose 模式下可以记录组件 setup 数据。
+

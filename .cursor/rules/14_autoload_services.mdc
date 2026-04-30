@@ -1,0 +1,147 @@
+---
+description: Autoload/全局服务规范：写服务/加路由/设置/本地化等；何时改 project.godot；避免循环依赖（打开 services/.gd/project.godot 时生效）
+globs: "{src/services/**/*.gd,src/**/*.gd,project.godot}"
+alwaysApply: false
+---
+
+# Autoload Services
+
+## 原则
+
+Autoload 是全局服务，不是万能垃圾桶。
+
+允许放：
+
+- 页面路由
+- 日志
+- 设置
+- 音频
+- 本地化
+- 资源注册
+- 简单应用状态
+
+不允许放：
+
+- 大量 UI 细节
+- 复杂玩法逻辑
+- 单个页面专属状态
+- 临时测试变量堆积
+
+## 第一阶段推荐服务
+
+按需创建，不必一次全部实现：
+
+```text
+AppState
+ScreenRouter
+DebugService
+SettingsService
+AudioService
+LocalizationService
+AssetRegistry
+SaveService
+```
+
+### AppState
+
+保存第一阶段应用级 mock 状态，例如：
+
+- 当前 screen id
+- 当前 mock run id
+- 是否处于 debug 模式
+
+不保存复杂玩法状态。
+
+### ScreenRouter
+
+负责：
+
+- 注册 screen id 到场景路径。
+- 切换页面。
+- 记录页面切换日志。
+- 处理返回逻辑。
+
+### DebugService
+
+负责：
+
+- 统一日志。
+- verbose 开关。
+- log channel 开关。
+- 测试 session。
+- 内存日志缓存。
+- 可选写入文件。
+
+### SettingsService
+
+负责：
+
+- 音量设置。
+- 分辨率设置占位。
+- 语言设置占位。
+- debug 设置占位。
+
+### AudioService
+
+第一阶段只需要占位：
+
+- button click
+- hover
+- screen transition
+
+没有素材时使用静默实现，不要报错。
+
+### LocalizationService
+
+第一阶段可以简单实现：
+
+- key -> 中文文本
+- 缺失 key 时返回 key，并记录 warning。
+
+### AssetRegistry
+
+负责：
+
+- placeholder 资源路径。
+- 默认图标。
+- 默认背景。
+- 缺失素材 fallback。
+
+### SaveService
+
+第一阶段只做占位或设置保存。
+
+不要提前实现复杂正式存档。
+
+## 修改 Autoload 的规则
+
+如果新增或修改 Autoload，AI 必须：
+
+1. 说明服务职责。
+2. 说明是否修改 `project.godot`。
+3. 说明如何在 Godot 中确认 Autoload 生效。
+4. 提供单独测试方式。
+5. 增加 DebugService 日志。
+
+## 服务可测试性
+
+每个 Service 应尽量提供：
+
+```gdscript
+func reset_for_tests() -> void:
+    pass
+```
+
+如果服务有状态，测试前应能重置。
+
+## 禁止循环依赖
+
+避免：
+
+```text
+ScreenRouter 依赖 AppState
+AppState 又依赖 ScreenRouter
+```
+
+如果确实需要交互，应通过简单数据或 signal。
+

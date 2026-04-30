@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "ids": {
+    "cards": [],
+    "enemies": [],
+    "statuses": [],
+    "rewards": [],
+    "events": [],
+    "assets": [],
+    "localization_keys": []
+  },
+  "deprecated": {}
+}
+

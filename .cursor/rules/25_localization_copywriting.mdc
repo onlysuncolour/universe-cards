@@ -1,0 +1,298 @@
+---
+description: 本地化与文案：做 UI/卡牌/事件文字时用 localization key；术语统一；避免把文字烘焙进图片；防止长文本撑爆 UI（打开 localization/content/ui/art 时生效）
+globs:
+  - "data/localization/**"
+  - "docs/content/**"
+  - "data/gameplay/**"
+  - "src/ui/**"
+  - "scenes/**"
+  - "docs/art/**"
+alwaysApply: false
+---
+
+# Localization and Copywriting
+
+## 核心目标
+
+本规则用于保证：
+
+- UI 文本集中管理；
+- 卡牌、状态、事件文案风格统一；
+- 后续支持多语言不会大返工；
+- 文本不会烘焙进图片；
+- 长文本不会破坏 UI；
+- AI 不会到处硬编码中文或英文。
+
+即使项目初期只做中文，也应尽量使用 localization key。
+
+---
+
+## 推荐目录
+
+```text
+data/localization/
+  zh_cn.json
+  en_us.json
+
+docs/content/
+  text_style_guide.md
+  glossary.md
+  naming_rules.md
+  lore_bible.md
+```
+
+---
+
+## 文本 Source of Truth
+
+正式面向玩家的文本应来自 localization 文件，包括：
+
+```text
+主菜单文本
+按钮文本
+设置文本
+卡牌名称
+卡牌描述
+状态名称
+状态描述
+敌人名称
+事件标题
+事件正文
+事件选项
+奖励说明
+错误提示
+教程文本
+```
+
+不应在代码里到处硬编码玩家可见文本。
+
+---
+
+## 允许硬编码的情况
+
+以下文本可以临时硬编码：
+
+```text
+debug log
+testbed 按钮
+开发期占位文本
+内部错误标记
+临时 prototype 文案
+```
+
+但如果进入 Candidate 或 Stable，必须迁移到 localization key。
+
+---
+
+## Localization Key 命名规则
+
+使用小写、点分层：
+
+```text
+ui.main_menu.start
+ui.main_menu.settings
+ui.common.confirm
+ui.common.cancel
+
+card.plasma_shot.name
+card.plasma_shot.desc
+
+status.overheat.name
+status.overheat.desc
+
+enemy.raider_drone.name
+enemy.raider_drone.intent.attack
+
+event.abandoned_station.title
+event.abandoned_station.body
+event.abandoned_station.choice.search
+event.abandoned_station.choice.leave
+```
+
+不要使用：
+
+```text
+text1
+button_ok_2
+new_card_name
+asdf
+```
+
+---
+
+## Localization 文件格式
+
+推荐 JSON：
+
+```json
+{
+  "ui.common.confirm": "确认",
+  "ui.common.cancel": "取消",
+  "card.plasma_shot.name": "等离子射击",
+  "card.plasma_shot.desc": "造成 {damage} 点伤害。"
+}
+```
+
+动态数值使用占位符：
+
+```text
+{damage}
+{block}
+{amount}
+{turns}
+{card_name}
+```
+
+不要把数值直接写死在文案里，如果该数值来自玩法数据。
+
+---
+
+## 卡牌文案规则
+
+卡牌描述应：
+
+```text
+短句优先
+效果顺序清晰
+术语统一
+数值使用占位符
+避免过长
+避免文学化过度
+```
+
+推荐句式：
+
+```text
+造成 {damage} 点伤害。
+获得 {block} 点护盾。
+抽 {count} 张牌。
+施加 {amount} 层过热。
+本回合内，每当你打出攻击牌，获得 {block} 点护盾。
+```
+
+卡牌可以有 flavor text，但应与规则文本分离（示例）：
+
+```text
+card.xxx.desc
+card.xxx.flavor
+```
+
+---
+
+## 术语统一
+
+所有游戏术语必须统一，并记录在：
+
+```text
+docs/content/glossary.md
+```
+
+---
+
+## 世界观文案风格（建议）
+
+科幻 Roguelite 卡牌游戏建议整体语气：
+
+```text
+冷静
+克制
+技术感
+探索未知
+轻微压迫感
+避免网络梗
+避免过度中二
+避免现代口语过多
+```
+
+---
+
+## 文本和图片分离（强制）
+
+卡牌插画、飞船图、背景图中不得烘焙正式文本。尤其禁止：
+
+```text
+卡牌名称画在 card_art 中
+卡牌费用画在 card_art 中
+卡牌描述画在 card_art 中
+UI 按钮文字直接画进背景图
+```
+
+正式文字应由 Godot UI 渲染，便于：
+
+```text
+改数值
+本地化
+适配字体
+适配分辨率
+修正文案
+```
+
+---
+
+## UI 溢出检查
+
+新增或修改文本后，必须考虑：
+
+```text
+中文是否过长
+英文是否更长
+按钮是否能容纳
+卡牌描述是否溢出
+小分辨率是否可读
+字体是否支持字符
+```
+
+如果 UI 没有自适应能力，应在任务输出中说明风险。
+
+---
+
+## 多语言策略（建议）
+
+初期可以只完整维护：
+
+```text
+zh_cn.json
+```
+
+但新增 key 时建议同时在：
+
+```text
+en_us.json
+```
+
+加入英文草稿或 TODO（例如 `TODO_TRANSLATE`）。
+
+---
+
+## AI 修改文本时必须输出
+
+当 AI 新增或修改玩家可见文本时，必须说明：
+
+```text
+Localization Keys:
+- 新增 key
+- 修改 key
+- 删除 key
+
+UI Risk:
+- 是否可能溢出
+- 是否需要检查卡牌/按钮/面板尺寸
+
+Terminology:
+- 是否新增术语
+- 是否需要更新 glossary
+```
+
+---
+
+## 不允许的行为
+
+AI 不得：
+
+- 在正式 UI 代码中硬编码大量中文；
+- 在图片 prompt 中要求生成卡牌文字；
+- 同一个概念使用多个名称；
+- 修改卡牌数值但忘记同步描述占位符；
+- 删除 localization key 但不检查引用；
+- 编写过长卡牌描述导致 UI 不可读。
+

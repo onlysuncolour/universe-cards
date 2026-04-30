@@ -1,0 +1,174 @@
+---
+description: 【全局】工程目录与命名：src/scenes/assets/data/web_ui/docs/tests 的结构基线与命名习惯（始终生效）
+alwaysApply: true
+---
+
+# Godot Project Structure
+
+## 推荐目录结构
+
+项目根目录建议使用：
+
+```text
+.cursor/
+  rules/
+
+src/
+  app/
+  core/
+  services/
+  debug/
+  ui/
+    components/
+    screens/
+    theme/
+  data/
+  mock/
+
+scenes/
+  app/
+  components/
+  screens/
+  testbeds/
+  mock/
+
+assets/
+  fonts/
+  ui/
+  icons/
+  backgrounds/
+  audio/
+  placeholders/
+  source/
+
+data/
+  ui_mock/
+  localization/
+
+web_ui/
+  prototypes/
+  shared/
+  assets/
+
+docs/
+  ui/
+    specs/
+    references/
+    conversion_notes/
+  test_plans/
+  ai/
+  log_examples/
+
+tests/
+  unit/
+  integration/
+  runners/
+```
+
+在 Godot 中这些路径对应：
+
+```text
+res://src/
+res://scenes/
+res://assets/
+res://data/
+res://docs/
+res://tests/
+```
+
+`web_ui/` 主要用于浏览器设计稿，不是 Godot 运行时目录。
+
+## 目录职责
+
+### src/
+
+放 GDScript 源码。
+
+- `src/app/`：启动、应用生命周期。
+- `src/services/`：全局服务，例如 ScreenRouter、SettingsService。
+- `src/debug/`：日志、调试面板、测试辅助。
+- `src/ui/components/`：可复用 UI 组件脚本。
+- `src/ui/screens/`：页面 Screen 脚本。
+- `src/ui/theme/`：主题、样式 token 脚本或工具。
+- `src/mock/`：第一阶段 mock 数据适配器。
+
+### scenes/
+
+放 Godot 场景。
+
+- `scenes/app/`：AppRoot、启动场景。
+- `scenes/components/`：UI 组件场景。
+- `scenes/screens/`：完整页面场景。
+- `scenes/testbeds/`：单模块测试场景。
+- `scenes/mock/`：mock 展示场景。
+
+### assets/
+
+放游戏素材。
+
+- 字体、图标、背景、音频、placeholder。
+- 不放来源不明或版权不清的资源。
+- AI 生成的临时素材必须标记为 placeholder。
+
+### data/
+
+放运行数据和 mock 数据。
+
+- `data/ui_mock/`：UI 第一阶段 mock 数据。
+- `data/localization/`：本地化文本。
+
+### web_ui/
+
+放网页 UI 原型。
+
+- 每个页面一个目录。
+- 使用静态 HTML/CSS/少量 JS。
+- 不默认引入构建工具。
+- 用户可以直接双击 `index.html` 查看。
+
+### docs/
+
+放文档。
+
+- UI 规格。
+- 测试计划。
+- UI 还原说明。
+- 日志示例。
+- AI 开发说明。
+
+### tests/
+
+放自动测试或轻量测试 runner。
+
+默认不引入测试插件。若需要插件，必须用户确认。
+
+## 文件命名
+
+- GDScript：`snake_case.gd`
+- 场景文件：`snake_case.tscn`
+- JSON 数据：`snake_case.json`
+- 文档：`snake_case.md`
+- 类名：`PascalCase`
+- ID：`lower_snake_case`
+
+示例：
+
+```text
+src/ui/screens/main_menu_screen.gd
+scenes/screens/main_menu_screen.tscn
+docs/ui/specs/main_menu_screen.md
+data/ui_mock/main_menu_mock.json
+scenes/testbeds/main_menu_screen_testbed.tscn
+```
+
+## 新增模块要求
+
+每新增一个模块，必须尽量同时提供：
+
+1. 代码文件。
+2. 场景文件，如果是 UI。
+3. mock data，如果需要数据。
+4. testbed 场景或测试脚本。
+5. 手动测试文档或测试步骤。
+6. 必要日志。
+

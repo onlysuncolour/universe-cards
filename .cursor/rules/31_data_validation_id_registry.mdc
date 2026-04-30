@@ -1,0 +1,335 @@
+---
+description: 【全局】数据校验与 ID 管理：新增/改动卡牌、敌人、状态、事件、奖励、素材、本地化时，必须保证 ID 唯一、引用有效、字段齐全，并提供校验/回滚（始终生效）
+alwaysApply: true
+---
+
+# Data Validation and ID Registry
+
+## 核心目标
+
+本规则用于保证项目中所有数据：
+
+- ID 唯一；
+- 引用有效；
+- 缺字段能被发现；
+- 卡牌、敌人、状态、奖励、素材、本地化不会互相引用错误；
+- AI 添加数据后不会留下隐性 bug；
+- 后期平衡和内容扩展可维护。
+
+数据错误必须尽早暴露，而不是运行到一半才崩溃。
+
+---
+
+## 推荐目录
+
+```text
+data/ids/id_registry.json
+tools/validation/validate_project_data.gd
+tests/validation/
+data/gameplay/
+data/assets/asset_manifest.json
+data/localization/
+```
+
+如果项目还没有 validator，AI 在新增较多数据时应建议创建最小校验工具。
+
+---
+
+## ID 命名规则
+
+所有正式 ID 使用：
+
+```text
+小写英文
+下划线
+稳定前缀
+不可包含空格
+不可包含中文
+不可包含特殊符号
+```
+
+推荐：
+
+```text
+card_plasma_shot
+card_emergency_repair
+enemy_raider_drone
+status_overheat
+module_shield_generator_mk1
+reward_add_card_common
+event_abandoned_station
+asset_card_art_plasma_shot
+ship_player_survey_corvette
+```
+
+不推荐：
+
+```text
+Plasma Shot
+等离子射击
+card-1
+new_card
+test
+xxx
+```
+
+---
+
+## ID Registry
+
+推荐维护：
+
+```text
+data/ids/id_registry.json
+```
+
+示例：
+
+```json
+{
+  "version": 1,
+  "ids": {
+    "cards": ["card_plasma_shot"],
+    "enemies": ["enemy_raider_drone"],
+    "statuses": ["status_overheat"],
+    "assets": ["card_art_plasma_shot"],
+    "events": []
+  },
+  "deprecated": {}
+}
+```
+
+如果暂时不维护全局 registry，至少每类数据必须在加载时检查重复 ID。
+
+---
+
+## 必须校验的内容（逐步完善）
+
+### 通用检查
+
+```text
+JSON / cfg / resource 格式可解析
+必填字段存在
+字段类型正确
+ID 唯一
+ID 命名合法
+没有重复文件定义同一 ID
+```
+
+### 卡牌数据（示例）
+
+```text
+card_id 唯一
+name_key 存在
+desc_key 存在
+asset_id 或 card_art_id 存在
+effects 格式合法
+cost 格式合法（如使用 cost）
+target 类型合法
+引用的 status_id 存在
+引用的 card_id 存在
+```
+
+### 敌人数据（示例）
+
+```text
+enemy_id 唯一
+name_key 存在
+hp 合法
+intent / pattern 格式合法
+引用的 action/effect/status 存在
+asset_id 存在（如需要）
+```
+
+### 状态数据（示例）
+
+```text
+status_id 唯一
+name_key 存在
+desc_key 存在
+hook 类型合法
+icon asset 存在
+```
+
+### 奖励数据（示例）
+
+```text
+reward_id 唯一
+奖励引用的 card_id / module_id 存在
+稀有度合法
+权重合法
+```
+
+### 事件数据（示例）
+
+```text
+event_id 唯一
+title_key 存在
+body_key 存在
+choice_id 唯一
+choice text key 存在
+事件结果引用的数据存在
+```
+
+### 素材数据（示例）
+
+```text
+asset_id 唯一
+prompt_doc 存在
+source_files 记录合理
+imported_files 存在（当 status=imported）
+status 合法
+style_version 存在
+```
+
+### 本地化（示例）
+
+```text
+代码或数据引用的 localization key 存在
+缺失 key 输出 error 或 warning
+未使用 key 可输出 warning
+占位符一致
+```
+
+---
+
+## 严重程度
+
+校验结果分为：
+
+```text
+ERROR
+WARNING
+INFO
+```
+
+### ERROR（必须修）
+
+例如：
+
+```text
+重复 ID
+引用不存在的 card_id
+必填字段缺失
+JSON 无法解析
+导入素材路径不存在
+```
+
+### WARNING（建议修）
+
+例如：
+
+```text
+未使用的 localization key
+缺少英文翻译
+prototype 数据未进入正式 registry
+数值异常大
+asset 状态仍是 prompt_draft
+```
+
+---
+
+## Prototype 数据规则
+
+Prototype 数据可以不进入正式数据池，但必须隔离。
+
+推荐目录：
+
+```text
+data/prototypes/
+docs/experiments/
+```
+
+Prototype 数据如果绕过完整校验，必须标记：
+
+```text
+prototype_only
+not_for_release
+```
+
+进入 Candidate 前必须补齐：
+
+```text
+加入正式数据目录
+通过 validator
+补齐 localization key
+补齐 asset 引用
+补齐测试 fixture
+```
+
+---
+
+## 数据修改时 AI 必须做的事
+
+当 AI 新增、删除、重命名数据 ID 时，必须：
+
+```text
+更新引用
+更新 id_registry（如存在）
+更新 localization key
+更新 asset_manifest（如涉及素材）
+更新测试 fixture（如存在）
+说明是否破坏旧存档或 replay
+```
+
+重命名 ID 时必须说明：
+
+```text
+old_id
+new_id
+影响文件
+是否加入 deprecated 映射
+```
+
+---
+
+## 不允许的行为
+
+AI 不得：
+
+- 创建重复 ID；
+- 使用中文或空格作为正式 ID；
+- 让 UI 直接猜测数据路径；
+- 添加卡牌但不添加 name_key / desc_key；
+- 添加素材引用但不更新 asset_manifest；
+- 删除 ID 但不检查引用；
+- 静默忽略缺失数据；
+- 把校验错误降级成无提示 fallback。
+
+---
+
+## Validator 运行建议
+
+如果项目已有 Godot headless 验证脚本，应使用类似方式运行：
+
+```text
+godot --headless --script tools/validation/validate_project_data.gd
+```
+
+如果无法运行，AI 必须提供手动检查步骤。
+
+---
+
+## AI 完成数据相关任务后的输出
+
+数据相关任务完成后，AI 必须输出：
+
+```text
+Data Changes:
+- 新增 ID
+- 修改 ID
+- 删除 ID
+- 重命名 ID
+
+Validation:
+- 是否运行 validator
+- 如果未运行，如何手动验证
+- 已知 warning
+
+References:
+- 影响的卡牌/敌人/状态/奖励/事件/素材/本地化
+
+Rollback:
+- 如何恢复旧数据
+```
+

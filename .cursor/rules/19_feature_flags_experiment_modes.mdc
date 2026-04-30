@@ -1,0 +1,302 @@
+---
+description: 实验开关/Feature Flags：做 prototype/candidate/stable 功能时必须可开关、可回滚、可清理；避免实验污染主流程（打开 data/dev、experiments、prototypes 等时生效）
+globs:
+  - "data/dev/**"
+  - "src/core/feature_flags/**"
+  - "src/dev/**"
+  - "src/prototypes/**"
+  - "docs/experiments/**"
+  - "tests/**"
+alwaysApply: false
+---
+
+# Feature Flags and Experiment Modes
+
+## 核心目标
+
+本规则用于管理开发期实验开关，避免：
+
+- Prototype 功能悄悄变成正式功能；
+- 旧实验残留在主流程；
+- 多套玩法互相污染；
+- UI、战斗、数据、素材实验无法回滚；
+- 用户不知道当前运行的是哪个实验版本。
+
+所有实验功能必须可识别、可开关、可删除。
+
+---
+
+## 推荐目录
+
+```text
+data/dev/dev_config.json
+data/dev/feature_flags.json
+src/core/feature_flags/
+src/dev/
+src/prototypes/
+docs/experiments/
+```
+
+---
+
+## Feature Flag Source of Truth
+
+Feature flags 应集中管理，不应散落在代码各处。
+
+推荐文件：
+
+```text
+data/dev/feature_flags.json
+```
+
+推荐结构：
+
+```json
+{
+  "version": 1,
+  "flags": {
+    "combat.energy_v1": {
+      "enabled": true,
+      "mode": "prototype",
+      "owner": "gameplay",
+      "description": "Prototype energy-based combat model.",
+      "created_at": "YYYY-MM-DD",
+      "expires_at": "YYYY-MM-DD",
+      "release_allowed": false
+    }
+  }
+}
+```
+
+---
+
+## 模式定义
+
+每个实验必须属于以下模式之一：
+
+```text
+prototype
+candidate
+stable
+deprecated
+```
+
+### prototype
+
+用于快速验证。
+
+允许：
+
+```text
+临时数据
+临时 UI
+硬编码测试值
+testbed 专用逻辑
+```
+
+禁止：
+
+```text
+写入正式存档
+混入正式数据池
+默认进入 release
+污染稳定系统
+```
+
+### candidate
+
+准备进入主流程的候选方案。
+
+必须：
+
+```text
+数据化
+有日志
+有测试入口
+有文档
+可回滚
+```
+
+### stable
+
+当前正式方案。
+
+必须：
+
+```text
+默认开启
+有测试保护
+有当前设计文档
+修改时说明迁移影响
+```
+
+### deprecated
+
+废弃方案。
+
+必须：
+
+```text
+默认关闭
+不得进入正式流程
+可归档或删除
+```
+
+---
+
+## Feature Flag 命名规则
+
+使用小写、点分层：
+
+```text
+combat.energy_v1
+combat.heat_v1
+ui.new_card_layout
+run.star_map_v2
+asset.use_temp_card_art
+debug.verbose_battle_log
+```
+
+不要使用模糊名称：
+
+```text
+new_system
+test
+flag1
+thing_enabled
+```
+
+---
+
+## 中央访问原则
+
+代码不应到处直接读取 JSON。
+
+推荐统一入口（示例）：
+
+```text
+FeatureFlags.is_enabled("combat.energy_v1")
+FeatureFlags.get_mode("combat.energy_v1")
+FeatureFlags.require("debug.verbose_battle_log", false)
+```
+
+如果项目还没有 FeatureFlags 服务，Prototype 阶段可以临时读取，但进入 Candidate 前必须整理成统一入口。
+
+---
+
+## 默认值规则
+
+实验功能默认应安全关闭。
+
+除非该功能已经是 stable，否则：
+
+```text
+release_allowed: false
+```
+
+Release build 中不得默认开启 prototype 功能。
+
+如果找不到某个 flag，默认值必须安全：
+
+```text
+false
+```
+
+并输出清晰 warning。
+
+---
+
+## 日志规则
+
+游戏启动时应记录当前启用的重要 flags：
+
+```text
+feature_flags_loaded
+active_feature_flags
+```
+
+战斗、星图、UI 大实验也应记录（示例）：
+
+```text
+combat_model = combat.energy_v1
+run_model = run.star_map_v2
+ui_card_layout = ui.new_card_layout
+```
+
+这样 bug 和 replay 才能复现。
+
+---
+
+## 实验文档
+
+每个重要实验应有文档：
+
+```text
+docs/experiments/exp_001_energy_combat.md
+docs/experiments/exp_002_heat_combat.md
+```
+
+实验文档应包含：
+
+```text
+实验目标
+假设
+启用 flag
+涉及文件
+测试方式
+结果
+是否进入 Candidate
+是否废弃
+```
+
+---
+
+## 不允许的行为
+
+AI 不得：
+
+- 用 feature flag 掩盖糟糕架构；
+- 同时维护太多旧玩法导致主流程混乱；
+- 让 prototype 默认进入 release；
+- 添加 flag 但没有说明用途；
+- 添加 flag 后不提供删除条件；
+- 将数据格式差异隐藏在多个 if 里。
+
+如果一个实验被确认废弃，应删除或归档，而不是永久保留。
+
+---
+
+## 修改 Feature Flag 时必须输出
+
+AI 修改 feature flag 时必须说明：
+
+```text
+Flag:
+- 名称
+- 模式
+- 默认是否开启
+- release 是否允许
+- 影响范围
+
+Test:
+- 如何开启
+- 如何关闭
+- 如何验证
+- 回滚方式
+```
+
+---
+
+## 测试要求
+
+对于 Candidate 或 Stable 功能，至少应测试：
+
+```text
+flag 开启时能运行
+flag 关闭时旧流程不坏
+日志能显示当前 flag 状态
+release 配置不会启用 prototype
+```
+
+对于 Prototype，可以只提供手动 testbed 测试，但必须隔离。
+

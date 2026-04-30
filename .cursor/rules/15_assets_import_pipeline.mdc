@@ -1,0 +1,100 @@
+---
+description: 资源/素材/占位图规范：assets/web_ui 目录、命名、版权与导入注意事项（打开 assets/web_ui/assets 或 .import 时生效）
+globs: "{assets/**,web_ui/assets/**,**/*.import}"
+alwaysApply: false
+---
+
+# Assets Import Pipeline
+
+## 资源目录
+
+游戏运行资源放在：
+
+```text
+assets/
+  fonts/
+  ui/
+  icons/
+  backgrounds/
+  audio/
+  placeholders/
+  source/
+```
+
+网页 UI 原型资源放在：
+
+```text
+web_ui/assets/
+```
+
+如果某个资源最终要进入 Godot 游戏，应复制或移动到 `assets/` 下，不能只存在 `web_ui/`。
+
+## 命名规则
+
+使用小写和下划线：
+
+```text
+bg_deep_space_01.png
+icon_energy.svg
+panel_glow_blue.png
+font_noto_sans_sc_regular.ttf
+```
+
+不要使用：
+
+```text
+新建文件.png
+image (1).png
+按钮最终最终版.png
+```
+
+## 版权规则
+
+- 不使用来源不明的商用素材。
+- 不直接导入参考游戏截图作为游戏资源。
+- AI 生成的临时资源必须标记为 placeholder。
+- 下载或引入开源字体/素材时，应在 `docs/` 中记录来源和许可。
+
+## Placeholder 规则
+
+缺资源时不得阻塞开发。
+
+允许使用：
+
+- 纯色 Panel
+- 简单 SVG 图标
+- Godot Label 占位
+- 程序生成渐变背景
+- `assets/placeholders/` 中的默认资源
+
+但必须命名清楚：
+
+```text
+placeholder_card_art.svg
+placeholder_enemy_ship.svg
+placeholder_space_bg.png
+```
+
+## Godot 导入规则
+
+- 不手动编辑 `.import` 文件，除非有明确原因。
+- 不随意修改已有资源的导入设置。
+- 字体放在 `assets/fonts/`。
+- UI 图标优先使用 SVG 或高分辨率 PNG。
+- 大背景图注意尺寸，避免无意义超大文件。
+- UI 面板优先使用 Theme / StyleBox，而不是大量切图。
+
+## Web 原型与 Godot 的关系
+
+Web 原型可以使用 CSS 渐变、阴影、滤镜。
+
+转换到 Godot 时：
+
+- 简单面板：使用 StyleBoxFlat。
+- 发光边框：使用 StyleBoxFlat + 外层 Panel / Shader / 贴图近似。
+- 背景：使用 TextureRect 或程序背景。
+- 图标：使用 TextureRect。
+- 动效：使用 Tween 或 AnimationPlayer。
+
+如果 Godot 无法 1:1 还原 CSS 效果，AI 必须说明采用的近似方案。
+

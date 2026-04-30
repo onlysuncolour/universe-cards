@@ -1,0 +1,118 @@
+---
+description: GDScript 编码规范：写脚本/加类型/命名/错误处理/禁止 print/如何打日志与可测试性（打开 .gd 时生效）
+globs: "**/*.gd"
+alwaysApply: false
+---
+
+# GDScript Style
+
+## 基础规范
+
+- 使用 Godot 4.x GDScript。
+- 尽量添加类型标注。
+- 文件名使用 `snake_case.gd`。
+- 类名使用 `PascalCase`。
+- 变量和函数使用 `snake_case`。
+- 常量使用 `UPPER_SNAKE_CASE`。
+- signal 使用过去式或事件式命名，例如 `pressed`, `screen_changed`, `value_updated`。
+
+示例：
+
+```gdscript
+class_name MainMenuScreen
+extends Control
+
+signal start_game_requested
+signal settings_requested
+
+var is_ready: bool = false
+
+func setup(data: Dictionary) -> void:
+    pass
+```
+
+## 类型标注
+
+优先写：
+
+```gdscript
+var energy: int = 3
+var title: String = ""
+var config: Dictionary = {}
+
+func set_title(value: String) -> void:
+    title = value
+```
+
+避免无类型大字典到处传。确实需要 Dictionary 时，字段名要清晰。
+
+## 职责边界
+
+- 一个脚本只负责一类事情。
+- UI 脚本只负责显示、输入和 signal。
+- Service 负责全局功能。
+- Mock adapter 负责 mock 数据转换。
+- 不要把真实玩法逻辑写进 UI。
+- 不要把大量 UI 细节写进 Service。
+
+## 节点访问
+
+允许使用：
+
+```gdscript
+@onready var start_button: Button = %StartButton
+```
+
+但必须保证节点名清晰。
+
+如果节点可能缺失，应进行防御：
+
+```gdscript
+if start_button == null:
+    DebugService.error("ui", "StartButton missing", {"screen": "main_menu"})
+    return
+```
+
+## 日志规则
+
+- 不要直接使用 `print()` 输出调试日志。
+- 统一使用 `DebugService`。
+- 如果 DebugService 尚未实现，可以临时使用 Godot 的 `push_warning()` / `push_error()`，但之后要迁移到 DebugService。
+- 测试数据、状态变化、按钮点击、页面切换应记录 channel log。
+
+## 错误处理
+
+- 不要静默失败。
+- 对用户可继续操作的问题，用 warning。
+- 对无法继续的问题，用 error。
+- 不要用异常式写法掩盖 Godot 报错。
+- 缺失素材时使用 placeholder，不要崩溃。
+
+## `_process` 使用限制
+
+- 不要在 `_process()` 中堆复杂逻辑。
+- UI 动画优先使用 Tween 或 AnimationPlayer。
+- 轮询逻辑必须有明确理由。
+- 如果只是响应点击、hover、状态变化，应使用 signal。
+
+## 可测试性
+
+每个非纯 UI 脚本应尽量：
+
+- 可独立实例化。
+- 少依赖场景树。
+- 少依赖 Autoload。
+- 对 Autoload 调用集中封装。
+- 提供清晰输入输出。
+- 允许 mock data 驱动。
+
+## 注释
+
+- 不要写无意义注释。
+- 对新手不直观的 Godot 机制可以写简短注释。
+- 对临时实现必须标记：
+
+```gdscript
+# TODO: Phase 2 replace mock data with real gameplay data.
+```
+

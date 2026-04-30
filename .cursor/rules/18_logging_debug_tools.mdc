@@ -1,0 +1,205 @@
+---
+description: DebugService/日志规范：如何打日志（等级/频道/verbose）、禁止 print、测试会话与结构化输出（打开 .gd 时生效）
+globs: "**/*.gd"
+alwaysApply: false
+---
+
+# Logging and Debug Tools
+
+## 核心原则
+
+项目必须有统一日志系统。
+
+禁止在业务代码中随意使用：
+
+```gdscript
+print()
+prints()
+printerr()
+```
+
+统一使用：
+
+```gdscript
+DebugService
+```
+
+如果 DebugService 尚未实现，本规则要求优先实现最小版本。
+
+## DebugService 目标
+
+DebugService 应支持：
+
+- 全局日志开关。
+- 日志等级。
+- verbose 详细日志。
+- channel 开关。
+- 内存日志缓存。
+- 测试 session。
+- 可选写入 `user://logs/`。
+- 输出结构化数据，方便后续单模块测试分析。
+
+## 推荐日志等级
+
+```text
+TRACE
+DEBUG
+INFO
+WARN
+ERROR
+```
+
+建议含义：
+
+- `TRACE`：非常细的流程记录，只在 verbose 模式开启。
+- `DEBUG`：调试信息。
+- `INFO`：正常关键流程。
+- `WARN`：可恢复异常。
+- `ERROR`：不可忽视错误。
+
+## 推荐日志 channel
+
+```text
+app
+screen
+routing
+ui
+component
+popup
+settings
+asset
+data
+save
+audio
+input
+test
+web_conversion
+gameplay_mock
+```
+
+新增模块时可以新增 channel，但必须命名清楚。
+
+## 推荐全局变量
+
+DebugService 至少应支持类似概念：
+
+```gdscript
+var logging_enabled: bool = true
+var verbose_enabled: bool = false
+var memory_buffer_enabled: bool = true
+var file_output_enabled: bool = false
+var minimum_level: String = "INFO"
+var enabled_channels: Dictionary = {}
+```
+
+可以通过 DebugOverlay 或 SettingsService 在未来切换。
+
+## 推荐 API
+
+```gdscript
+DebugService.trace(channel: String, event: String, data: Dictionary = {}) -> void
+DebugService.debug(channel: String, event: String, data: Dictionary = {}) -> void
+DebugService.info(channel: String, event: String, data: Dictionary = {}) -> void
+DebugService.warn(channel: String, event: String, data: Dictionary = {}) -> void
+DebugService.error(channel: String, event: String, data: Dictionary = {}) -> void
+
+DebugService.set_verbose_enabled(value: bool) -> void
+DebugService.set_channel_enabled(channel: String, value: bool) -> void
+
+DebugService.begin_test_session(session_name: String) -> void
+DebugService.end_test_session() -> void
+DebugService.clear_memory_buffer() -> void
+DebugService.get_memory_buffer() -> Array
+```
+
+实际实现可以略有不同，但必须保持统一入口。
+
+## 推荐日志结构
+
+每条日志应尽量包含：
+
+```json
+{
+  "time_msec": 123456,
+  "frame": 100,
+  "level": "INFO",
+  "channel": "screen",
+  "event": "screen_entered",
+  "message": "optional human readable text",
+  "data": {
+    "screen_id": "main_menu"
+  }
+}
+```
+
+## 记录哪些数据
+
+UI 模块测试时应记录：
+
+- 页面进入
+- 页面退出
+- mock 数据加载
+- 按钮点击
+- 弹窗打开/关闭
+- 组件状态变化
+- 错误 fallback
+- 缺失素材 fallback
+
+Service 测试时应记录：
+
+- 输入参数
+- 状态变化
+- 输出结果
+- 错误原因
+
+## 不要记录哪些数据
+
+不要直接记录：
+
+- 整个 Node 对象。
+- 巨大的 Texture/Resource。
+- 二进制内容。
+- 无限递归字典。
+- 隐私信息。
+- 过长文本。
+
+应该记录：
+
+- node.name
+- resource_path
+- id
+- 简短状态
+- 数值
+
+## Verbose 模式
+
+verbose 开启时可以记录更细数据，例如：
+
+- 布局尺寸
+- 每个组件初始化数据
+- 页面切换参数
+- mock 数据详情
+
+verbose 关闭时只记录关键流程。
+
+## 人工测试要求
+
+每个模块完成后，AI 必须告诉用户：
+
+- 如何打开 verbose log。
+- 预期 Output 中应看到哪些 channel。
+- 如果失败，应复制哪些日志给 AI。
+
+## DebugOverlay
+
+未来应提供 DebugOverlay，用于：
+
+- 显示 FPS。
+- 显示当前 screen。
+- 切换 verbose。
+- 切换 channel。
+- 查看最近日志。
+- 导出日志。
+
+第一阶段可以先实现简化版本。
+
