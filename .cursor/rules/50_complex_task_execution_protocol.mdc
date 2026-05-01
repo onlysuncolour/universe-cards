@@ -25,6 +25,24 @@ AI 的目标不是“尽快给出看起来完成的答案”，而是交付：
 
 ---
 
+## 0.5 文档门禁（Complex/Critical 开工前必须做）
+
+在执行 **Complex Task / Critical Task** 前，AI 必须先应用：
+
+```text
+.cursor/rules/51_product_documentation_system.mdc
+```
+
+至少完成以下动作后才能开始开发：
+
+```text
+1. 判断本次任务影响哪些产品文档（feature spec / change_log / roadmap 等）。
+2. 必要时先更新/创建最小相关文档。
+3. 开发完成后回写结果、问题、验证方式与后续。
+```
+
+---
+
 ## 一、任务分级（必须先判断任务规模）
 
 开始任务前，AI 必须先判断任务规模。

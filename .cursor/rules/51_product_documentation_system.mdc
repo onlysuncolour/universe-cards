@@ -1,0 +1,288 @@
+---
+description: 【全局】产品文档体系（Doc-first）：需求/想法/功能说明/变更日志的归档位置与写作门禁；复杂任务必须先写/更新文档再开发（始终生效）
+alwaysApply: true
+---
+
+# 产品文档体系（Product Documentation System）
+
+## 核心目标
+
+本规则用于保证项目不是靠聊天记录和临时记忆推进，而是逐步沉淀成一套可维护的产品文档。
+
+AI 必须帮助用户把：
+
+- 零散 idea；
+- 新增功能；
+- 玩法改动；
+- UI 流程；
+- 数据结构；
+- 美术 / 音频方向；
+- 技术决策；
+- Bug 修复；
+- 开发过程；
+- 开发结果；
+- 遗留问题；
+
+落实到合适的文档中。
+
+原则：
+
+```text
+先明确要做什么，再开发。
+开发中记录关键变化。
+开发后回写结果、问题、验证和后续。
+不要让重要产品信息只存在于聊天记录里。
+```
+
+---
+
+## 与 50 规则的关系
+
+`50_complex_task_execution_protocol.mdc` 负责：
+
+```text
+任务分级
+计划
+验收标准
+影响范围
+执行流程
+测试
+回滚
+```
+
+本规则负责：
+
+```text
+文档归档位置
+文档先行（Doc-first）
+产品知识沉淀
+开发过程记录
+文档与代码同步
+```
+
+对于 Complex Task / Critical Task：
+
+```text
+必须先应用本规则，再开始开发。
+```
+
+对于 Simple Task：
+
+```text
+如果只是很小的内部修复，可以不新增产品文档；
+但如果改变了玩家可见行为、玩法数据、UI 文案、素材、流程或架构，仍需要更新相关文档或 changelog。
+```
+
+---
+
+## 文档不是越多越好
+
+本项目需要的是：
+
+```text
+可维护文档
+可追踪文档
+能指导开发的文档
+能帮助下次 AI 接手的文档
+```
+
+不是为了形式创建大量空文档。
+
+AI 必须遵守：
+
+```text
+小任务：少写文档，但要说明是否影响产品文档。
+复杂任务：必须有轻量任务记录和相关产品文档更新。
+架构 / 数据 / 存档 / 素材管线 / 核心玩法变化：必须更新对应文档。
+跨会话任务：必须更新 docs/ai/current_task.md 或 docs/ai/tasks/。
+```
+
+---
+
+## 推荐文档结构（最小集合优先）
+
+如果项目尚无产品文档，优先创建最小集合：
+
+```text
+docs/product/document_index.md
+docs/product/product_brief.md
+docs/product/idea_inbox.md
+docs/product/roadmap.md
+docs/product/change_log.md
+docs/product/features/
+
+docs/design/
+docs/technical/
+docs/ai/tasks/
+```
+
+不要一次性创建几十个空目录。
+
+如果项目已有等价文档，AI 应复用已有文档，不要重复创建新体系。
+
+---
+
+## 文档分层（职责必须清楚）
+
+### Product Docs（产品层）
+
+回答：
+
+```text
+这个游戏是什么？
+为什么要做？
+玩家体验是什么？
+当前要做哪些功能？
+哪些 idea 被接受、搁置或废弃？
+```
+
+常见文件：
+
+```text
+docs/product/product_brief.md
+docs/product/roadmap.md
+docs/product/features/*.md
+docs/product/idea_inbox.md
+docs/product/change_log.md
+```
+
+### Design Docs（设计层）
+
+回答：
+
+```text
+玩法规则是什么？
+战斗怎么运作？
+卡牌怎么设计？
+UI 流程是什么？
+数值和平衡原则是什么？
+```
+
+### Technical Docs（技术层）
+
+回答：
+
+```text
+系统怎么实现？
+数据结构是什么？
+存档格式是什么？
+日志 / replay 怎么工作？
+模块边界是什么？
+```
+
+### AI Memory（AI 交接层）
+
+回答：
+
+```text
+现在做到哪了？
+当前任务是什么？
+下次接手应该做什么？
+有什么已知问题？
+```
+
+### Decisions / ADR（决策层）
+
+回答：
+
+```text
+为什么选择这个方案？
+为什么不用别的方案？
+这个决定将来如何回滚或迁移？
+```
+
+---
+
+## 文档 Source of Truth（入口必须有）
+
+以下文档建议作为核心入口：
+
+```text
+docs/product/document_index.md
+```
+
+每次创建新的重要文档，都应更新 `document_index.md`，确保“文档可发现”。
+
+---
+
+## Feature Spec（功能说明）模板（建议）
+
+每个正式功能建议使用 Feature Spec：
+
+```text
+docs/product/features/feature_<id>.md
+```
+
+最低要求（不要空话）：
+
+```text
+Feature:
+- 名称/ID
+
+Goal:
+- 这次要达成什么（玩家价值）
+
+Non-goals:
+- 明确不做什么
+
+User Flow / UX:
+- 基本流程（可配截图/线框）
+
+Data:
+- 相关数据/ID/本地化 key/素材引用
+
+Acceptance Criteria:
+- 可打勾/打叉的验收标准
+
+Risks:
+- 风险与限制
+
+Verification:
+- 如何验证（F5/F6、testbed、日志）
+```
+
+---
+
+## Task Ledger（开发过程记录）
+
+Complex Task / Critical Task 应创建任务记录（跨会话或大范围修改时尤其需要）：
+
+```text
+docs/ai/tasks/YYYY-MM-DD_task_slug.md
+```
+
+---
+
+## ADR 触发条件（必须）
+
+以下情况应创建 ADR：
+
+```text
+选择一种架构方案
+引入第三方插件或工具
+改变数据格式
+改变存档格式
+改变战斗核心流程
+改变素材管线
+做出之后可能影响很多文件的设计选择
+```
+
+推荐路径：
+
+```text
+docs/decisions/ADR_YYYYMMDD_<title>.md
+```
+
+---
+
+## 不允许的行为
+
+AI 不得：
+
+```text
+新增产品功能但不更新 feature spec / changelog
+改架构但不更新 technical doc / ADR
+创建大量空文档
+重复创建已有文档体系
+```
+
