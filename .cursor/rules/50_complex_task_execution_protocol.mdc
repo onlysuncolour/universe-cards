@@ -1,0 +1,432 @@
+---
+description: 【全局】复杂任务门禁流程：任务分级（Simple/Complex/Critical）→ Task Contract（目标/非目标/验收标准/影响扫描）→ 分阶段执行 → 最终逐项验收/测试/回滚（始终生效）
+alwaysApply: true
+---
+
+# 复杂任务执行协议（Complex Task Execution Protocol）
+
+## 核心原则
+
+AI 的目标不是“尽快给出看起来完成的答案”，而是交付：
+
+```text
+可运行
+可验证
+可回滚
+可继续维护
+不遗漏关键配套项
+```
+
+对于复杂任务，AI 必须使用结构化流程，不能只凭直觉直接改代码。
+
+本规则是全局总控流程。其他规则负责具体领域，例如 Git、授权、数据校验、本地化、Feature Flag、Replay、性能、构建等。
+
+如果本规则和其他规则冲突，选择更严格、更安全的做法。
+
+---
+
+## 一、任务分级（必须先判断任务规模）
+
+开始任务前，AI 必须先判断任务规模。
+
+### Simple Task
+
+满足以下大部分条件：
+
+```text
+修改 1-3 个文件
+局部 bug 修复
+局部 UI 文案调整
+不改变架构
+不改变数据格式
+不影响存档
+不涉及删除/重命名
+不涉及素材授权
+```
+
+Simple Task 可以直接处理，但完成后仍需说明：
+
+```text
+改了什么
+如何测试
+如何回滚
+```
+
+---
+
+### Complex Task
+
+出现以下任一情况，视为 Complex Task：
+
+```text
+修改 4 个以上文件
+跨 UI / Gameplay / Data / Asset / Save / Audio / Build 任意两个以上领域
+新增一个系统、manager、service、autoload、pipeline
+新增一批数据或内容
+新增正式 UI 流程
+新增战斗、卡牌、敌人、奖励、事件等玩法内容
+需要同步文档、测试、数据、素材或本地化
+用户说“做一套”“完整实现”“重构”“接入”“系统化”
+```
+
+Complex Task 必须先输出 Task Contract，然后再执行。
+
+---
+
+### Critical Task
+
+出现以下任一情况，视为 Critical Task：
+
+```text
+删除文件
+重命名大量文件
+大规模重构
+修改存档格式
+修改数据 ID 体系
+修改核心战斗流程
+修改项目启动流程
+修改 Godot 版本或插件
+引入第三方依赖
+修改 export/build/release 配置
+涉及法律/授权不明确素材
+预计修改超过 10 个文件
+可能导致旧系统不可用
+```
+
+Critical Task 必须先输出计划，并等待用户确认。
+
+即使用户说“直接做”，以下操作也不能跳过确认：
+
+```text
+删除大量文件
+破坏旧存档兼容
+引入插件
+修改 Godot 版本
+执行危险 Git 操作
+使用授权未知素材作为正式资源
+```
+
+---
+
+## 二、复杂任务必须先做 Task Contract
+
+Complex Task 和 Critical Task 在动手前，AI 必须输出 Task Contract。
+
+Task Contract 不需要很长，但必须具体、可验证。
+
+模板：
+
+```text
+Task Contract:
+- Goal:
+- Non-goals:
+- Current Understanding:
+- Existing Systems To Reuse:
+- Acceptance Criteria:
+- Impact Map:
+- Plan:
+- Verification:
+- Rollback Strategy:
+- Open Questions / Assumptions:
+```
+
+---
+
+## 三、Goal 和 Non-goals（必须明确边界）
+
+复杂任务必须明确：
+
+```text
+这次要完成什么
+这次明确不做什么
+哪些内容留到后续
+```
+
+---
+
+## 四、Acceptance Criteria（验收标准必须可打勾/打叉）
+
+Complex Task 必须写可验证的验收标准。
+
+推荐格式：
+
+```text
+Acceptance Criteria:
+- [ ] 运行指定 Godot 场景不会报错。
+- [ ] 点击“开始战斗”后进入战斗 UI。
+- [ ] 玩家初始有 3 点能量。
+- [ ] 能量不足时不能打出卡牌，并有 UI/日志反馈。
+- [ ] 战斗关键事件写入 battle log。
+- [ ] 新增数据通过基础 ID 检查。
+```
+
+如果用户需求不明确，AI 应先把需求转成验收标准，再执行。
+
+---
+
+## 五、Impact Map（影响范围扫描，避免漏配套项）
+
+AI 必须针对以下领域判断：`Impacted / Not impacted / Unknown`。
+
+模板：
+
+```text
+Impact Map:
+- Godot scenes/scripts:
+- UI / Input / Accessibility:
+- Gameplay logic:
+- Data / IDs / Validation:
+- Localization / Copywriting:
+- Assets / Binary files / Git LFS:
+- Legal / License / Provenance:
+- Save / Migration:
+- Feature Flags / Experiments:
+- RNG / Replay / Logs:
+- Tests / QA:
+- Performance:
+- Build / Export / Release:
+- Docs / AI Memory:
+```
+
+如果某项是 `Unknown`，AI 必须提出问题、或声明假设、或把它列入风险。
+
+---
+
+## 六、先调查现有系统，再新建系统
+
+Complex Task 开始前，AI 必须先检查是否已有相关系统。
+
+在没有确认前，不要重复创建：
+
+```text
+Logger
+EventBus
+FeatureFlags
+SaveManager
+AssetManifest
+LocalizationService
+RNGService
+BattleSystem
+CardDatabase
+AudioManager
+InputService
+```
+
+如果确实要新建系统，必须说明：
+
+```text
+为什么不能复用现有系统
+新系统边界是什么
+如何与现有系统连接
+以后如何扩展或删除
+```
+
+---
+
+## 七、分阶段执行，而不是一次性大改
+
+复杂任务应拆成阶段，每阶段都应有可验证结果。
+
+推荐：
+
+```text
+Phase 0: 读取现有结构，确认方案
+Phase 1: 添加最小可运行骨架
+Phase 2: 接入数据 / UI / 日志
+Phase 3: 加测试和验证
+Phase 4: 文档、清理、回滚说明
+```
+
+---
+
+## 八、Scope Drift（范围漂移）处理
+
+如果执行过程中发现任务范围变大，AI 必须停止并重新说明。
+
+触发条件：
+
+```text
+预计修改文件数增加超过 50%
+需要新增原计划外系统
+需要删除/重命名文件
+发现旧系统与计划冲突
+发现需求需要用户选择方案
+发现会影响存档、构建、授权或核心数据格式
+```
+
+AI 应输出：
+
+```text
+Scope Change Detected:
+- 原计划是什么
+- 新发现的问题是什么
+- 影响范围变成什么
+- 建议方案
+- 是否继续
+```
+
+---
+
+## 九、Stop Conditions（必须暂停询问用户）
+
+遇到以下情况，AI 必须暂停并询问用户，不能擅自决定：
+
+```text
+需要删除用户文件
+需要重命名大量资源
+需要修改 Godot 版本
+需要引入插件或第三方依赖
+需要使用授权未知素材
+需要破坏旧存档
+需要选择两个以上架构方案
+用户需求与现有规则冲突
+用户明确要求复制商业 IP、在世艺术家风格或未授权素材
+```
+
+---
+
+## 十、Implementation Checklist（执行清单/任务台账）
+
+Complex Task 执行时必须维护清单。
+
+清单可以在聊天中维护；如果任务较长或跨会话，应写入：
+
+```text
+docs/ai/tasks/YYYY-MM-DD_task_slug.md
+```
+
+只有以下情况必须创建任务文件：
+
+```text
+任务跨多个会话
+预计修改超过 8 个文件
+涉及架构
+涉及存档
+涉及正式数据格式
+涉及大量素材
+用户明确要求记录
+```
+
+---
+
+## 十一、不要让 TODO 伪装成完成
+
+如果还有 TODO，必须分类并在最终输出中明确：
+
+```text
+Blocking TODO:
+Non-blocking TODO:
+Known Risk:
+```
+
+---
+
+## 十二、领域遗漏检查表（Completion Audit 前的快速扫面）
+
+完成复杂任务前，AI 必须至少快速过一遍以下检查：
+
+### Data / IDs
+
+```text
+ID 是否唯一
+引用是否存在
+localization key 是否存在
+asset_id 是否存在
+是否需要更新 registry / manifest
+```
+
+### Assets
+
+```text
+正式资源还是占位资源
+是否记录 prompt/source
+是否有授权信息
+是否有过大文件 / Git LFS 风险
+```
+
+### Docs / Memory
+
+```text
+是否需要更新 project_status/current_task/known_issues
+是否需要新增 ADR
+```
+
+（其他领域按实际任务补齐：UI/Input、Gameplay、Save、Flags、Logs/Replay、Tests、Build/Release 等）
+
+---
+
+## 十三、Verification Ladder（验证阶梯）
+
+AI 完成修改后，应尽量按以下顺序验证：
+
+```text
+1. 静态检查：文件路径、引用、明显语法错误
+2. 数据检查：ID、localization、asset manifest
+3. 模块测试：单个系统或测试场景
+4. Godot 场景测试：F5/F6 运行指定场景
+5. 手动流程测试：用户点击步骤
+6. 回归测试：旧功能是否仍然可用
+```
+
+AI 不能声称已经运行测试，除非确实通过工具运行过。
+
+---
+
+## 十四、Definition of Done（完成定义）
+
+Complex Task 只有满足以下条件，才可以说“完成”：
+
+```text
+1. Acceptance Criteria 已逐项对照。
+2. 修改范围与计划一致，或已说明范围变化。
+3. 没有隐藏的 Blocking TODO。
+4. 相关数据、文案、素材、日志、测试、文档已处理，或明确说明不适用。
+5. 已提供验证方式。
+6. 已提供回滚方式。
+7. 已列出已知风险。
+```
+
+---
+
+## 十五、最终输出格式（Complex/Critical 必须）
+
+```text
+Summary:
+- 本次完成了什么
+
+Acceptance Criteria Status:
+- [x] ...
+- [ ] ... 未完成原因
+
+Changed Files:
+- path/to/file_a.gd
+
+Impact Audit:
+- UI:
+- Gameplay:
+- Data:
+- Localization:
+- Assets:
+- Save:
+- Feature Flags:
+- Logs/Replay:
+- Tests:
+- Docs:
+
+Verification:
+- 已运行：
+- 未运行：
+- 建议用户手动测试：
+
+Rollback:
+- 如何撤销本次修改
+- 新增文件如何删除
+- 是否影响存档/数据
+
+Known Risks:
+- ...
+
+Next Steps:
+- ...
+```
+
